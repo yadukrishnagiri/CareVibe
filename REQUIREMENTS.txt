@@ -1,0 +1,220 @@
+# CareVibe - Software & Account Requirements
+# ============================================
+# This file lists all the software, tools, and accounts you need
+# to run the CareVibe Patient Engagement & Self-Service App.
+#
+# Follow the installation order provided below.
+# ============================================
+
+# ============================================
+# PART 1: ESSENTIAL SOFTWARE (Install First)
+# ============================================
+
+# 1. Node.js
+#    Version: 18.x LTS or higher
+#    Download: https://nodejs.org/
+#    Install: Download installer, run it, restart computer
+#    Verify: Open PowerShell, type "node --version"
+#    Notes: Choose LTS version, includes npm automatically
+
+# 2. MongoDB Community Server
+#    Version: Latest stable (7.x or 6.x)
+#    Download: https://www.mongodb.com/try/download/community
+#    Install: Download installer, run it, choose "Complete" installation
+#    Verify: Open Services (services.msc), check "MongoDB" service is running
+#    Notes: On Windows, MongoDB runs as a Windows service automatically
+
+# 3. Flutter SDK
+#    Version: Latest stable (3.x or higher)
+#    Download: https://docs.flutter.dev/get-started/install/windows
+#    Install: 
+#      - Download ZIP file
+#      - Extract to C:\src\flutter (or any folder without spaces)
+#      - Add C:\src\flutter\bin to PATH environment variable
+#    Verify: Open PowerShell, type "flutter doctor"
+#    Notes: Run "flutter doctor" and fix any issues it reports
+
+# 4. Android Studio (For Android Development)
+#    Version: Latest stable
+#    Download: https://developer.android.com/studio
+#    Install: 
+#      - Download installer, run it
+#      - Choose "Standard" installation
+#      - Install Android SDK, Android SDK Platform-Tools, Android Emulator
+#    Verify: Open Android Studio, go to Tools → SDK Manager
+#    Notes: 
+#      - Accept Android licenses: Run "flutter doctor --android-licenses"
+#      - Create at least one Android Virtual Device (AVD) for testing
+#    Alternative: You can use Chrome for web development (simpler for beginners)
+
+# 5. Git (Version Control)
+#    Version: Latest
+#    Download: https://git-scm.com/download/win
+#    Install: Download installer, run it with default options
+#    Verify: Open PowerShell, type "git --version"
+#    Notes: Needed to clone/download the project
+
+# 6. Visual Studio Code (Recommended Code Editor)
+#    Version: Latest
+#    Download: https://code.visualstudio.com/
+#    Install: Download installer, run it
+#    Recommended Extensions:
+#      - Flutter
+#      - Dart
+#      - ESLint
+#      - Prettier
+#    Notes: Optional but highly recommended for better code editing
+
+# ============================================
+# PART 2: COMMAND LINE TOOLS (Install via npm)
+# ============================================
+
+# These are installed AFTER Node.js is installed.
+
+# 1. Firebase CLI
+#    Install Command: npm install -g firebase-tools
+#    Verify: firebase --version
+#    Notes: Used for Firebase project management
+
+# 2. FlutterFire CLI
+#    Install Command: dart pub global activate flutterfire_cli
+#    Add to PATH: $env:PATH += ";$env:LocalAppData\Pub\Cache\bin"
+#    Verify: flutterfire --version
+#    Notes: Used to configure Firebase for Flutter apps
+
+# ============================================
+# PART 3: ACCOUNTS & API KEYS (Free Accounts)
+# ============================================
+
+# 1. Firebase Account (Google Account)
+#    Website: https://console.firebase.google.com/
+#    Sign Up: Use your Google account
+#    Required Actions:
+#      - Create a new Firebase project
+#      - Enable Authentication (Google + Email/Password)
+#      - Create Android app (package: com.carevibe.patient)
+#      - Download google-services.json
+#      - Generate Firebase Admin SDK private key JSON
+#    Cost: Free tier is sufficient for demo
+
+# 2. Groq AI Account
+#    Website: https://console.groq.com/
+#    Sign Up: Create free account
+#    Required Actions:
+#      - Go to API Keys section
+#      - Create a new API key
+#      - Copy the API key (starts with "gsk_...")
+#    Cost: Free tier includes generous API limits
+
+# 3. MongoDB Atlas (Optional - Only if not using local MongoDB)
+#    Website: https://www.mongodb.com/cloud/atlas
+#    Sign Up: Create free account
+#    Required Actions:
+#      - Create a free cluster
+#      - Get connection string
+#      - Add connection string to backend/.env
+#    Cost: Free tier M0 cluster is sufficient for demo
+#    Note: Local MongoDB is easier for beginners
+
+# ============================================
+# PART 4: ENVIRONMENT VARIABLES TO SET
+# ============================================
+
+# Backend (.env file in backend/ folder):
+# ---------------------------------------
+# MONGO_URI=mongodb://127.0.0.1:27017/patient_ai_demo
+# JWT_SECRET=<your-random-secret-key>
+# AES_KEY=<32-characters-exactly>
+# GROQ_API_KEY=<your-groq-api-key>
+# GOOGLE_APPLICATION_CREDENTIALS=<path-to-firebase-admin-key.json>
+# PORT=5000
+
+# Frontend (automatic configuration):
+# -----------------------------------
+# - google-services.json placed in frontend/android/app/
+# - firebase_options.dart generated via flutterfire configure
+
+# ============================================
+# PART 5: SYSTEM REQUIREMENTS
+# ============================================
+
+# Operating System:
+#   - Windows 10/11 (64-bit)
+#   - Windows Server 2016 or later
+
+# Minimum Hardware:
+#   - RAM: 8 GB (16 GB recommended)
+#   - Storage: 10 GB free space
+#   - Processor: Dual-core 2.0 GHz or higher
+
+# Internet Connection:
+#   - Required for downloading packages and API calls
+#   - Stable connection recommended
+
+# ============================================
+# PART 6: VERIFICATION CHECKLIST
+# ============================================
+
+# Before starting setup, verify:
+# [ ] Node.js installed (node --version works)
+# [ ] npm installed (npm --version works)
+# [ ] MongoDB installed and running (check Services)
+# [ ] Flutter installed (flutter --version works)
+# [ ] Flutter doctor shows mostly green checkmarks
+# [ ] Android Studio installed (or Chrome for web)
+# [ ] Git installed (git --version works)
+# [ ] Firebase account created
+# [ ] Groq account created and API key obtained
+# [ ] PowerShell can run commands (not CMD)
+
+# ============================================
+# PART 7: INSTALLATION ORDER
+# ============================================
+
+# Recommended installation sequence:
+# 
+# 1. Install Node.js (includes npm)
+# 2. Install Git
+# 3. Install Visual Studio Code (optional but recommended)
+# 4. Install MongoDB
+# 5. Install Flutter SDK
+# 6. Install Android Studio (or skip if using web only)
+# 7. Install Firebase CLI: npm install -g firebase-tools
+# 8. Install FlutterFire CLI: dart pub global activate flutterfire_cli
+# 9. Create Firebase account and project
+# 10. Create Groq account and get API key
+# 11. Download/clone CareVibe project
+# 12. Follow README.md setup instructions
+
+# ============================================
+# PART 8: COMMON INSTALLATION ISSUES
+# ============================================
+
+# Issue: "node is not recognized"
+# Fix: Restart computer after installing Node.js, or check PATH variable
+
+# Issue: "flutter is not recognized"
+# Fix: Add Flutter bin folder to PATH, restart PowerShell
+
+# Issue: "MongoDB service won't start"
+# Fix: Run MongoDB installer as Administrator, check Windows Event Viewer
+
+# Issue: "Flutter doctor shows Android licenses issue"
+# Fix: Run "flutter doctor --android-licenses" and accept all licenses
+
+# Issue: "Firebase CLI not found"
+# Fix: Add npm global bin folder to PATH: %APPDATA%\npm
+
+# Issue: "FlutterFire CLI not found"
+# Fix: Add Pub cache bin to PATH: %LOCALAPPDATA%\Pub\Cache\bin
+
+# ============================================
+# END OF REQUIREMENTS
+# ============================================
+
+# Next Steps:
+# 1. Install all software listed above
+# 2. Create all required accounts
+# 3. Follow the detailed setup guide in README.md
+# 4. Start coding! 🚀
+
