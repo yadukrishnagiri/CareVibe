@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 
-const String apiBase = kIsWeb ? 'http://localhost:5000' : 'http://10.0.2.2:5000';
+// Production backend URL (Render.com)
+const String apiBase = 'https://carevibe-backend.onrender.com';
 
 Map<String, String> authHeaders(String jwt) => {
       'Content-Type': 'application/json',

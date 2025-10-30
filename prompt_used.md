@@ -1,0 +1,1 @@
+***start building and if u want anyy manual help tell me like api, createing mongo ,fire base etc but you should guid me***
