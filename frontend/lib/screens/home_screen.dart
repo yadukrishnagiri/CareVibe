@@ -8,6 +8,7 @@ import 'package:provider/provider.dart';
 
 import '../providers/session_provider.dart';
 import '../providers/shell_controller.dart';
+import '../providers/auth_provider.dart';
 import '../services/api.dart';
 import '../theme/app_theme.dart';
 
@@ -98,9 +99,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   children: [
                     _buildHeroBanner(name).animate().fadeIn(duration: 600.ms).slideY(begin: 0.2),
                     const SizedBox(height: 24),
-                    Text('Quick actions', style: Theme.of(context).textTheme.titleMedium),
-                    const SizedBox(height: 12),
-                    _buildQuickActions(context).animate().fadeIn(duration: 400.ms).slideX(begin: 0.2),
+                    _buildProfileSection(context).animate().fadeIn(duration: 400.ms).slideY(begin: 0.1),
                     const SizedBox(height: 24),
                     Text('Upcoming appointments', style: Theme.of(context).textTheme.titleMedium),
                     const SizedBox(height: 12),
@@ -174,22 +173,58 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildQuickActions(BuildContext context) {
-    final actions = [
-      _QuickAction(icon: Icons.calendar_month_rounded, label: 'Book visit', onTap: () => _showComingSoon(context)),
-      _QuickAction(icon: Icons.upload_file_rounded, label: 'Upload record', disabled: true, onTap: () => _showComingSoon(context)),
-      _QuickAction(icon: Icons.chat_bubble_rounded, label: 'AI Chat', onTap: () => _jumpToTab(1)),
-      _QuickAction(icon: Icons.medical_information_rounded, label: 'Doctors', onTap: () => _jumpToTab(2)),
-      _QuickAction(icon: Icons.analytics_rounded, label: 'Dashboard', onTap: () => _jumpToTab(3)),
-    ];
+  Widget _buildProfileSection(BuildContext context) {
+    final session = context.watch<SessionProvider>();
+    final user = session.firebaseUser;
+    final photoUrl = user?.photoURL;
+    final email = user?.email ?? 'Not provided';
 
-    return SizedBox(
-      height: 98,
-      child: ListView.separated(
-        scrollDirection: Axis.horizontal,
-        itemCount: actions.length,
-        itemBuilder: (context, index) => actions[index],
-        separatorBuilder: (_, __) => const SizedBox(width: 12),
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 12, offset: const Offset(0, 8)),
+        ],
+      ),
+      child: Row(
+        children: [
+          CircleAvatar(
+            radius: 28,
+            backgroundColor: AppColors.primary.withOpacity(0.15),
+            backgroundImage: photoUrl != null ? NetworkImage(photoUrl) : null,
+            child: photoUrl == null ? const Icon(Icons.person, color: AppColors.primary) : null,
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(session.firebaseUser?.displayName ?? 'User', style: Theme.of(context).textTheme.titleMedium),
+                const SizedBox(height: 4),
+                Text(email, style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: AppColors.textSecondary)),
+              ],
+            ),
+          ),
+          FilledButton.icon(
+            onPressed: () async {
+              final scaffold = ScaffoldMessenger.of(context);
+              try {
+                final auth = AuthProvider(context.read<SessionProvider>());
+                await auth.signOut();
+                if (context.mounted) {
+                  Navigator.pushNamedAndRemoveUntil(context, '/', (route) => false);
+                }
+              } catch (e) {
+                scaffold.showSnackBar(const SnackBar(content: Text('Failed to logout. Please try again.')));
+              }
+            },
+            icon: const Icon(Icons.logout),
+            label: const Text('Logout'),
+          ),
+        ],
       ),
     );
   }

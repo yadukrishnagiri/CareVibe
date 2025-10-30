@@ -116,7 +116,7 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                     ),
                     const SizedBox(height: 28),
                     Text(
-                      'Patient Connect',
+                      'Vibe Care',
                       style: GoogleFonts.poppins(
                         fontSize: 32,
                         color: Colors.white,
@@ -126,7 +126,7 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      'Empower your health journey with AI guidance and curated care.',
+                      'Empower your health journey with AI guidance — welcome to your AI healthcare assistant.',
                       textAlign: TextAlign.center,
                       style: GoogleFonts.inter(color: Colors.white.withOpacity(0.85), fontSize: 15),
                     ),
