@@ -211,6 +211,7 @@ Or download the ZIP file and extract it to a folder called `CareVibe`.
    - Replace `C:\CareVibe\firebase-admin-key.json` with the actual path where you saved your Firebase Admin SDK JSON file
    - Replace `your_super_secret_jwt_key_change_this_to_something_random` with any random string (like `mySecretKey123!@#`)
    - For `AES_KEY`, use exactly 32 characters (e.g., `12345678901234567890123456789012`)
+   - For cloud deployment, set `MONGO_URI` to your MongoDB Atlas connection string (Step 7)
 
 5. Save the `.env` file
 
@@ -325,6 +326,57 @@ Or download the ZIP file and extract it to a folder called `CareVibe`.
 
 ---
 
+### Step 7: Deploy to the Cloud & Build the APK
+
+Want the app to run on a real phone without your laptop on? Deploy the backend to Render (free tier) and point the Flutter app to that URL.
+
+#### 7.1 Deploy backend to Render.com
+1. Sign up at [render.com](https://render.com) with your GitHub account.
+2. Click **New → Web Service** and choose the `yadukrishnagiri/CareVibe` repository.
+3. Use these settings:
+   - **Root Directory:** `backend`
+   - **Build Command:** `npm install`
+   - **Start Command:** `npm run start`
+   - **Instance Type:** Free
+4. In the **Environment** section add your secrets:
+   - `MONGO_URI` → Atlas connection string (with password encoded, e.g. `%40` for `@`)
+   - `JWT_SECRET`, `AES_KEY`, `GROQ_API_KEY`
+   - `GOOGLE_APPLICATION_CREDENTIALS` → `/etc/secrets/firebase-admin-key.json`
+5. In **Secret Files**, create `firebase-admin-key.json` and paste your Firebase Admin SDK JSON.
+6. Click **Deploy web service**.
+
+#### 7.2 Whitelist Render in MongoDB Atlas
+1. In MongoDB Atlas go to **Security → Network Access**.
+2. Add IP `0.0.0.0/0` (allow all) or the specific Render IPs.
+3. Wait until the status shows **Active** and redeploy if needed.
+
+#### 7.3 Update Flutter to use the cloud API
+1. Open `frontend/lib/services/api.dart`.
+2. Replace the `apiBase` value with your Render URL, e.g.
+   ```dart
+   const String apiBase = 'https://carevibe-backend.onrender.com';
+   ```
+3. (Optional) commit and push the change to GitHub so future deploys use it.
+
+#### 7.4 Build the release APK
+1. In PowerShell:
+   ```powershell
+   cd C:\Users\yaduk\OneDrive\Documents\GitHub\CareVibe\frontend
+   flutter clean
+   flutter pub get
+   flutter build apk --release
+   ```
+2. APK output: `frontend\build\app\outputs\flutter-apk\app-release.apk`
+
+#### 7.5 Install on a real device
+- Copy the APK to your phone and open it, or run:
+  ```powershell
+  adb install frontend\build\app\outputs\flutter-apk\app-release.apk
+  ```
+- Sign in with Google, open AI chat, doctors, dashboard — everything now uses the Render backend.
+
+---
+
 ## 🔧 Troubleshooting
 
 ### Backend Issues
@@ -360,9 +412,11 @@ Or download the ZIP file and extract it to a folder called `CareVibe`.
 
 **Problem:** Can't connect to backend API
 - **Solution:** 
-  - Make sure backend is running (`npm run dev` in backend folder)
-  - For web: Backend should be accessible at `http://localhost:5000`
-  - For Android emulator: Backend should be accessible at `http://10.0.2.2:5000`
+  - If running locally: start the backend with `npm run dev`
+  - For web (local): backend should be accessible at `http://localhost:5000`
+  - For Android emulator (local): backend should be accessible at `http://10.0.2.2:5000`
+  - For Render deployment: open `https://<your-service>.onrender.com/health` and confirm `{"ok":true}`
+  - Ensure `frontend/lib/services/api.dart` points to the same URL you just verified
 
 **Problem:** AI chat shows "AI service unavailable"
 - **Solution:** 
@@ -432,8 +486,10 @@ Before running the app, make sure:
 - [ ] Backend `.env` file created with all values filled
 - [ ] Backend dependencies installed (`npm install` in backend folder)
 - [ ] Frontend dependencies installed (`flutter pub get` in frontend folder)
-- [ ] Backend server running (`npm run dev` shows "API up")
-- [ ] Frontend app running (`flutter run`)
+- [ ] Backend server running locally (`npm run dev`) **or** Render deployment responding at `/health`
+- [ ] `frontend/lib/services/api.dart` points to the correct backend URL (local or Render)
+- [ ] Frontend app running (`flutter run`) *(for local testing)*
+- [ ] Release APK built (`flutter build apk --release`) and installed on device *(for mobile demo)*
 
 ---
 
@@ -451,9 +507,10 @@ If you're stuck:
 ## 📝 Notes
 
 - The backend must be running **before** you start the frontend app
-- For Android emulator, the backend URL is automatically set to `10.0.2.2:5000`
-- For web, the backend URL is `localhost:5000`
-- Always keep the backend server running while using the app
+- For local Android emulator tests, the backend URL defaults to `10.0.2.2:5000`
+- For local web tests, the backend URL defaults to `localhost:5000`
+- For production, update `api.dart` to your Render URL (e.g. `https://carevibe-backend.onrender.com`)
+- Always keep the backend server running while using the app (or ensure your Render service is awake)
 - The first time you run Flutter, it may take several minutes to compile
 
 ---

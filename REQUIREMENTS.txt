@@ -116,6 +116,15 @@
 #    Cost: Free tier M0 cluster is sufficient for demo
 #    Note: Local MongoDB is easier for beginners
 
+# 4. Render.com Account (for cloud backend hosting)
+#    Website: https://render.com/
+#    Sign Up: Use your GitHub account
+#    Required Actions:
+#      - Connect GitHub repository `CareVibe`
+#      - Create a Web Service (root directory `backend`, build `npm install`, start `npm run start`)
+#      - Add environment variables and Firebase secret file in the Render dashboard
+#    Cost: Free tier is sufficient for demos (service sleeps after inactivity)
+
 # ============================================
 # PART 4: ENVIRONMENT VARIABLES TO SET
 # ============================================
@@ -128,6 +137,10 @@
 # GROQ_API_KEY=<your-groq-api-key>
 # GOOGLE_APPLICATION_CREDENTIALS=<path-to-firebase-admin-key.json>
 # PORT=5000
+#
+# Render deployment: add the same keys in the Render dashboard and set `MONGO_URI`
+# to your MongoDB Atlas connection string, `GOOGLE_APPLICATION_CREDENTIALS` to
+# `/etc/secrets/firebase-admin-key.json`.
 
 # Frontend (automatic configuration):
 # -----------------------------------
@@ -165,6 +178,8 @@
 # [ ] Git installed (git --version works)
 # [ ] Firebase account created
 # [ ] Groq account created and API key obtained
+# [ ] Render.com account connected to GitHub (for cloud demo)
+# [ ] MongoDB Atlas cluster created and IP whitelist updated (if using cloud DB)
 # [ ] PowerShell can run commands (not CMD)
 
 # ============================================
@@ -183,8 +198,10 @@
 # 8. Install FlutterFire CLI: dart pub global activate flutterfire_cli
 # 9. Create Firebase account and project
 # 10. Create Groq account and get API key
-# 11. Download/clone CareVibe project
-# 12. Follow README.md setup instructions
+# 11. (Optional) Create MongoDB Atlas cluster and user
+# 12. (Optional) Create Render.com web service and add environment variables
+# 13. Download/clone CareVibe project
+# 14. Follow README.md setup instructions
 
 # ============================================
 # PART 8: COMMON INSTALLATION ISSUES
@@ -198,6 +215,12 @@
 
 # Issue: "MongoDB service won't start"
 # Fix: Run MongoDB installer as Administrator, check Windows Event Viewer
+
+# Issue: "MongooseServerSelectionError" when deployed on Render
+# Fix: In MongoDB Atlas, whitelist `0.0.0.0/0` (or Render IPs) under Network Access and redeploy
+
+# Issue: First request to Render backend is slow
+# Fix: Free-tier Render services sleep after 15 minutes of inactivity; wait ~30 seconds for cold start
 
 # Issue: "Flutter doctor shows Android licenses issue"
 # Fix: Run "flutter doctor --android-licenses" and accept all licenses
