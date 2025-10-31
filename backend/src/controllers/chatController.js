@@ -1,5 +1,19 @@
 const axios = require('axios');
 
+function enforceBriefStyle(text) {
+  if (!text) return '';
+  let out = String(text).trim();
+  const lines = out
+    .split(/\r?\n/)
+    .map((l) => l.trim())
+    .filter(Boolean);
+  out = (lines.length ? lines.slice(0, 4).join('\n') : out);
+  if (out.length > 450) {
+    out = out.slice(0, 450).replace(/[^\w)\]}]*$/, '').trim();
+  }
+  return out;
+}
+
 exports.chatWithAI = async (req, res) => {
   const fallbackReply =
     'I am experiencing a slow connection right now. Please try again in a moment or consult a healthcare professional for urgent concerns.';
@@ -29,13 +43,13 @@ exports.chatWithAI = async (req, res) => {
         'https://api.groq.com/openai/v1/chat/completions',
         {
           model,
-          temperature: 0.6,
-          max_tokens: 512,
+          temperature: 0.3,
+          max_tokens: 200,
           messages: [
             {
               role: 'system',
               content:
-                'You are CareVibe, a warm and supportive virtual health assistant. Share general wellness tips and always recommend consulting licensed professionals for emergencies.',
+                'You are CareVibe, a calm and reliable wellness assistant. Respond in 2–4 short lines. Be brief, direct, supportive, and professional. Provide only essential wellness steps. Do not diagnose conditions. If symptoms sound serious or persist, advise seeking medical care. Use simple, natural language. Avoid lists and marketing tone. Ask if they need anything else only when relevant.',
             },
             { role: 'user', content: message.trim() },
           ],
@@ -55,7 +69,8 @@ exports.chatWithAI = async (req, res) => {
         continue;
       }
 
-      return res.json({ reply });
+      const formatted = enforceBriefStyle(reply);
+      return res.json({ reply: formatted });
     } catch (err) {
       lastError = err;
       const status = err.response?.status;
