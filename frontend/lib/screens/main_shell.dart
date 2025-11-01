@@ -9,6 +9,7 @@ import 'chat_screen.dart';
 import 'dashboard_screen.dart';
 import 'doctors_screen.dart';
 import 'home_screen.dart';
+import 'analytics_screen.dart';
 
 class MainShell extends StatelessWidget {
   const MainShell({super.key});
@@ -34,6 +35,7 @@ class MainShell extends StatelessWidget {
           ChatScreen(),
           DoctorsScreen(),
           DashboardScreen(),
+          AnalyticsScreen(),
         ],
       ),
       bottomNavigationBar: AnimatedContainer(
@@ -55,6 +57,7 @@ class MainShell extends StatelessWidget {
             BottomNavigationBarItem(icon: Icon(Icons.chat_bubble_rounded), label: 'Chat'),
             BottomNavigationBarItem(icon: Icon(Icons.medical_services_rounded), label: 'Doctors'),
             BottomNavigationBarItem(icon: Icon(Icons.dashboard_rounded), label: 'Dashboard'),
+            BottomNavigationBarItem(icon: Icon(Icons.insights_rounded), label: 'Analytics'),
           ],
         ),
       ),

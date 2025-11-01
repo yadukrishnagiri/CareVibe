@@ -7,7 +7,8 @@
   "scripts": {
     "dev": "nodemon src/server.js",
     "start": "node src/server.js",
-    "test:groq": "node scripts/testGroqConnection.js"
+    "test:groq": "node scripts/testGroqConnection.js",
+    "test:places": "node scripts/testPlaces.js --lat 12.9716 --lon 77.5946 --radius 5000 --keywords \"hospital clinic doctor\""
   },
   "dependencies": {
     "axios": "^1.13.1",

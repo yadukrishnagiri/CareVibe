@@ -6,6 +6,7 @@ import 'package:provider/provider.dart';
 import 'firebase_options.dart';
 import 'providers/session_provider.dart';
 import 'providers/shell_controller.dart';
+import 'providers/chat_context_provider.dart';
 import 'screens/login_screen.dart';
 import 'screens/main_shell.dart';
 import 'theme/app_theme.dart';
@@ -20,6 +21,7 @@ void main() async {
       providers: [
         ChangeNotifierProvider(create: (_) => SessionProvider()),
         ChangeNotifierProvider(create: (_) => ShellController()),
+        ChangeNotifierProvider(create: (_) => ChatContextProvider()),
       ],
       child: const CareVibeApp(),
     ),

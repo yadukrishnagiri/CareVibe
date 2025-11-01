@@ -1,47 +1,94 @@
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:provider/provider.dart';
 
 import '../theme/app_theme.dart';
+import '../providers/session_provider.dart';
+import '../services/metrics_api.dart';
 
-class DashboardScreen extends StatelessWidget {
+class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
 
   @override
+  State<DashboardScreen> createState() => _DashboardScreenState();
+}
+
+class _DashboardScreenState extends State<DashboardScreen> {
+  List<HealthMetricDto> _metrics = [];
+  bool _loading = false;
+  String? _error;
+
+  @override
+  void initState() {
+    super.initState();
+    _load();
+  }
+
+  Future<void> _load() async {
+    setState(() { _loading = true; _error = null; });
+    try {
+      final session = context.read<SessionProvider>();
+      final jwt = session.jwt;
+      if (jwt == null) throw Exception('Not authenticated');
+      final list = await MetricsApi.fetchMyMetrics(jwt, days: 7);
+      setState(() { _metrics = list; });
+    } catch (e) {
+      setState(() { _error = e.toString(); });
+    } finally {
+      if (mounted) setState(() { _loading = false; });
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final heartSpots = _metrics.isNotEmpty
+        ? _metrics.asMap().entries.map((e) => FlSpot(e.key.toDouble(), e.value.restingHeartRateBpm.toDouble())).toList()
+        : [FlSpot(0, 72), FlSpot(1, 76), FlSpot(2, 74), FlSpot(3, 78), FlSpot(4, 73), FlSpot(5, 71), FlSpot(6, 75)];
+    final sleepBars = _metrics.isNotEmpty
+        ? _metrics.map((m) => m.sleepDurationHr).toList()
+        : [6.5, 7.2, 8.1, 5.9, 7.6, 8.0, 7.4];
+    final steps = _metrics.isNotEmpty ? _metrics.last.stepCount : 5400;
+
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(title: const Text('Your Health Overview')),
       body: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-        child: ListView(
-          children: [
-            _PeriodSelector().animate().fadeIn(duration: 250.ms),
-            const SizedBox(height: 18),
-            _buildChartCard(
-              context,
-              title: 'Heart rate trend',
-              child: SizedBox(height: 180, child: _HeartRateChart()),
-            ),
-            const SizedBox(height: 18),
-            _buildChartCard(
-              context,
-              title: 'Sleep hours',
-              child: SizedBox(height: 180, child: _SleepBarChart()),
-            ),
-            const SizedBox(height: 18),
-            _buildChartCard(
-              context,
-              title: 'Steps goal',
-              child: const _StepsRadial(),
-            ),
-            const SizedBox(height: 18),
-            _InsightCard(
-              text: 'You walked 5,400 steps yesterday — great job! Keep your momentum with a quick evening stroll.',
-            ).animate().fadeIn(duration: 300.ms, delay: 200.ms).slideY(begin: 0.2),
-            const SizedBox(height: 80),
-          ],
-        ),
+        child: _loading
+            ? const Center(child: CircularProgressIndicator())
+            : _error != null
+                ? Center(child: Text(_error!, style: Theme.of(context).textTheme.bodyLarge))
+                : ListView(
+                    children: [
+                      _PeriodSelector().animate().fadeIn(duration: 250.ms),
+                      const SizedBox(height: 18),
+                      _buildChartCard(
+                        context,
+                        title: 'Heart rate trend',
+                        child: SizedBox(height: 180, child: _HeartRateChart(spots: heartSpots)),
+                      ),
+                      const SizedBox(height: 18),
+                      _buildChartCard(
+                        context,
+                        title: 'Sleep hours',
+                        child: SizedBox(height: 180, child: _SleepBarChart(bars: sleepBars)),
+                      ),
+                      const SizedBox(height: 18),
+                      _buildChartCard(
+                        context,
+                        title: 'Steps goal',
+                        child: _StepsRadial(completed: steps),
+                      ),
+                      const SizedBox(height: 18),
+                      _InsightCard(
+                        text: _metrics.isNotEmpty
+                            ? 'Latest: ${_metrics.last.stepCount} steps, ${_metrics.last.sleepDurationHr.toStringAsFixed(1)}h sleep, HR ${_metrics.last.restingHeartRateBpm} bpm.'
+                            : 'You walked 5,400 steps yesterday — great job! Keep your momentum with a quick evening stroll.',
+                      ).animate().fadeIn(duration: 300.ms, delay: 200.ms).slideY(begin: 0.2),
+                      const SizedBox(height: 80),
+                    ],
+                  ),
       ),
     );
   }
@@ -93,18 +140,12 @@ class _PeriodSelectorState extends State<_PeriodSelector> {
 }
 
 class _HeartRateChart extends StatelessWidget {
+  const _HeartRateChart({required this.spots});
+
+  final List<FlSpot> spots;
+
   @override
   Widget build(BuildContext context) {
-    final spots = [
-      FlSpot(0, 72),
-      FlSpot(1, 76),
-      FlSpot(2, 74),
-      FlSpot(3, 78),
-      FlSpot(4, 73),
-      FlSpot(5, 71),
-      FlSpot(6, 75),
-    ];
-
     return LineChart(
       LineChartData(
         gridData: FlGridData(show: false),
@@ -148,10 +189,11 @@ class _HeartRateChart extends StatelessWidget {
 }
 
 class _SleepBarChart extends StatelessWidget {
+  const _SleepBarChart({required this.bars});
+
+  final List<double> bars;
   @override
   Widget build(BuildContext context) {
-    final bars = [6.5, 7.2, 8.1, 5.9, 7.6, 8.0, 7.4];
-
     return BarChart(
       BarChartData(
         gridData: FlGridData(show: false),
@@ -192,11 +234,12 @@ class _SleepBarChart extends StatelessWidget {
 }
 
 class _StepsRadial extends StatelessWidget {
-  const _StepsRadial();
+  const _StepsRadial({required this.completed});
+
+  final int completed;
 
   @override
   Widget build(BuildContext context) {
-    const completed = 5400;
     const goal = 8000;
     final progress = completed / goal;
 

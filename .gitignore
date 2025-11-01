@@ -113,3 +113,6 @@ lerna-debug.log*
 *.pid
 *.seed
 *.pid.lock
+
+# Documentation
+docs/

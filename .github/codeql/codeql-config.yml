@@ -1,0 +1,7 @@
+name: carevibe-node
+paths:
+  - backend/
+paths-ignore:
+  - frontend/
+
+

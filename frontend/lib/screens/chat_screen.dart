@@ -6,6 +6,7 @@ import 'package:http/http.dart' as http;
 import 'package:provider/provider.dart';
 
 import '../providers/session_provider.dart';
+import '../providers/chat_context_provider.dart';
 import '../services/api.dart';
 import '../theme/app_theme.dart';
 
@@ -44,6 +45,7 @@ class _ChatScreenState extends State<ChatScreen> {
 
   Future<void> _sendMessage() async {
     final session = context.read<SessionProvider>();
+    final chatCtx = context.read<ChatContextProvider>();
     final jwt = session.jwt;
     if (!session.isAuthenticated || jwt == null) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -54,6 +56,9 @@ class _ChatScreenState extends State<ChatScreen> {
 
     final text = _controller.text.trim();
     if (text.isEmpty || _isSending) return;
+
+    // Update inferred keywords and hospital preference from user input before sending
+    chatCtx.updateFromText(text);
 
     setState(() {
       _messages.add(ChatMessage(sender: Sender.user, text: text));
@@ -77,6 +82,8 @@ class _ChatScreenState extends State<ChatScreen> {
       setState(() {
         _messages.add(ChatMessage(sender: Sender.ai, text: reply, warning: warning));
       });
+      // Also let AI replies influence context if it suggests a specialty or urgency
+      chatCtx.updateFromText(reply);
     } catch (e) {
       setState(() {
         _messages.add(ChatMessage(

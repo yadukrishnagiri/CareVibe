@@ -472,6 +472,25 @@ CareVibe/
 
 ---
 
+## 🔒 Security & Code Quality
+
+- Code scanning with GitHub CodeQL is enabled for the Node backend. It runs on pushes/PRs to `main` and weekly.
+- Workflow: `.github/workflows/codeql.yml` (scopes analysis to `backend/` via `./.github/codeql/codeql-config.yml`).
+- View results: GitHub → Security → Code scanning alerts.
+
+## 🗂️ Documentation Folder (ignored by Git)
+
+- The `docs/` folder is ignored by Git to keep the repository lean for app code.
+- If docs were previously committed, untrack them (files stay locally):
+  ```powershell
+  git rm -r --cached docs
+  git commit -m "chore: stop tracking docs/"
+  git push
+  ```
+- Want to keep specific files tracked? Remove `docs/` from `.gitignore` and add explicit ignores (e.g., `docs/*.md` except one file), or add a `.gitignore` inside `docs/` to fine-tune.
+
+---
+
 ## ✅ Quick Checklist
 
 Before running the app, make sure:

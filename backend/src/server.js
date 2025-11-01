@@ -23,6 +23,7 @@ app.use('/auth', require('./routes/authRoutes'));
 app.use('/ai', require('./routes/chatRoutes'));
 app.use('/', require('./routes/doctorRoutes'));
 app.use('/', require('./routes/appointmentRoutes'));
+app.use('/', require('./routes/healthRoutes'));
 
 const PORT = process.env.PORT || 5000;
 
