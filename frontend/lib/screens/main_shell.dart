@@ -24,7 +24,7 @@ class MainShell extends StatelessWidget {
     }
 
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       drawer: const ProfileDrawer(),
       body: PageView(
         controller: nav.pageController,

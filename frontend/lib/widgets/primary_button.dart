@@ -25,26 +25,44 @@ class PrimaryButton extends StatelessWidget {
           )
         : (icon ?? const SizedBox.shrink());
 
-    final buttonLabel = Text(isLoading ? 'Please wait…' : label);
+    final buttonLabel = Text(isLoading ? 'Please wait…' : label, style: const TextStyle(color: Colors.white));
 
     if (icon == null && !isLoading) {
-      return ElevatedButton(
-        onPressed: enabled ? onPressed : null,
-        style: ElevatedButton.styleFrom(
-          minimumSize: const Size(double.infinity, 54),
-          alignment: Alignment.center,
+      return DecoratedBox(
+        decoration: BoxDecoration(boxShadow: [
+          BoxShadow(color: Theme.of(context).colorScheme.primary.withOpacity(0.25), blurRadius: 20, offset: const Offset(0, 10))
+        ]),
+        child: ElevatedButton(
+          onPressed: enabled ? onPressed : null,
+          style: ElevatedButton.styleFrom(
+            minimumSize: const Size(double.infinity, 54),
+            alignment: Alignment.center,
+            backgroundColor: Theme.of(context).colorScheme.primary,
+            foregroundColor: Colors.white,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
+            overlayColor: Theme.of(context).colorScheme.primary.withOpacity(0.08),
+          ),
+          child: buttonLabel,
         ),
-        child: buttonLabel,
       );
     }
 
-    return ElevatedButton.icon(
-      onPressed: enabled ? onPressed : null,
-      icon: child,
-      label: buttonLabel,
-      style: ElevatedButton.styleFrom(
-        minimumSize: const Size(double.infinity, 54),
-        alignment: Alignment.center,
+    return DecoratedBox(
+      decoration: BoxDecoration(boxShadow: [
+        BoxShadow(color: Theme.of(context).colorScheme.primary.withOpacity(0.25), blurRadius: 20, offset: const Offset(0, 10))
+      ]),
+      child: ElevatedButton.icon(
+        onPressed: enabled ? onPressed : null,
+        icon: child,
+        label: buttonLabel,
+        style: ElevatedButton.styleFrom(
+          minimumSize: const Size(double.infinity, 54),
+          alignment: Alignment.center,
+          backgroundColor: Theme.of(context).colorScheme.primary,
+          foregroundColor: Colors.white,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
+          overlayColor: Theme.of(context).colorScheme.primary.withOpacity(0.08),
+        ),
       ),
     );
   }

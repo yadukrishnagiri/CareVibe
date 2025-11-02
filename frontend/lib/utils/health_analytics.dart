@@ -1,6 +1,7 @@
 import 'dart:math' as math;
 
 import '../services/metrics_api.dart';
+import 'clinical_scores.dart';
 
 class TrendPoint {
   TrendPoint(this.x, this.y);
@@ -33,6 +34,15 @@ class AnalyticsSummary {
     required this.wellnessScore,
     required this.series,
     required this.alerts,
+    this.shockIndex,
+    this.bsa,
+    this.sepsisPatternScore,
+    this.sepsisPatternLevel,
+    this.respiratoryDistressFlag,
+    this.respiratoryDistressSeverity,
+    this.metabolicRiskLevel,
+    this.metabolicRiskScore,
+    this.proInterpretations,
   });
 
   final double map; // Mean Arterial Pressure
@@ -46,6 +56,17 @@ class AnalyticsSummary {
   final double wellnessScore; // 0-100
   final List<TrendSeries> series;
   final List<AlertItem> alerts;
+  
+  // Clinical scores (Pro Mode)
+  final double? shockIndex;
+  final double? bsa; // Body Surface Area
+  final int? sepsisPatternScore; // 0-4
+  final String? sepsisPatternLevel; // 'low' | 'medium' | 'high'
+  final bool? respiratoryDistressFlag;
+  final String? respiratoryDistressSeverity; // 'none' | 'mild' | 'moderate'
+  final String? metabolicRiskLevel; // 'low' | 'intermediate' | 'high' | 'unknown'
+  final int? metabolicRiskScore; // 0-4
+  final List<String>? proInterpretations; // Clinical notes for Pro Mode
 }
 
 // --- Parsing helpers ---
@@ -310,6 +331,34 @@ AnalyticsSummary computeAnalytics(List<HealthMetricDto> data) {
   // Aggregate alerts for latest day
   final alerts = checkAlerts(latest);
 
+  // Calculate clinical scores (Pro Mode)
+  final shockIdx = bp.systolic != null 
+      ? calculateShockIndex(latest.restingHeartRateBpm, bp.systolic) 
+      : null;
+  final bsaVal = calculateBSA(latest.weightKg, latest.bmi);
+  
+  final sepsisPattern = detectSepsisPattern(latest);
+  final respiratoryDistress = detectRespiratoryDistress(latest);
+  final metabolicRisk = calculateMetabolicRisk(data);
+  
+  // Generate pro interpretations
+  final proInterps = generateProInterpretation(
+    AnalyticsSummary(
+      map: mapVal,
+      pulsePressure: pp,
+      bpCategory: bpCat,
+      remPercent: remPct,
+      sleepQualityIndex: sqi,
+      activityScore: actScore,
+      weeklyActiveMinutes: wam,
+      stress7DayAvg: stressAvg,
+      wellnessScore: wellness,
+      series: [stepsSeries, sleepSeries, hrSeries],
+      alerts: alerts,
+    ),
+    data,
+  );
+
   return AnalyticsSummary(
     map: mapVal,
     pulsePressure: pp,
@@ -322,6 +371,15 @@ AnalyticsSummary computeAnalytics(List<HealthMetricDto> data) {
     wellnessScore: wellness,
     series: [stepsSeries, sleepSeries, hrSeries],
     alerts: alerts,
+    shockIndex: shockIdx?.isNaN == false ? shockIdx : null,
+    bsa: bsaVal.isNaN ? null : bsaVal,
+    sepsisPatternScore: sepsisPattern.score > 0 ? sepsisPattern.score : null,
+    sepsisPatternLevel: sepsisPattern.score > 0 ? sepsisPattern.level : null,
+    respiratoryDistressFlag: respiratoryDistress.flag,
+    respiratoryDistressSeverity: respiratoryDistress.flag ? respiratoryDistress.severity : null,
+    metabolicRiskLevel: metabolicRisk.level,
+    metabolicRiskScore: metabolicRisk.score,
+    proInterpretations: proInterps.isNotEmpty ? proInterps : null,
   );
 }
 

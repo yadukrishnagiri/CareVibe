@@ -5,6 +5,7 @@ import '../providers/auth_provider.dart';
 import '../providers/session_provider.dart';
 import '../providers/shell_controller.dart';
 import '../theme/app_theme.dart';
+import '../providers/theme_provider.dart';
 
 class ProfileDrawer extends StatefulWidget {
   const ProfileDrawer({super.key});
@@ -48,17 +49,15 @@ class _ProfileDrawerState extends State<ProfileDrawer> {
             ListTile(
               leading: const Icon(Icons.edit_outlined),
               title: const Text('Edit profile'),
-              onTap: () => ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Profile editing coming soon.')),
-              ),
+              onTap: () {
+                Navigator.pop(context);
+                Navigator.pushNamed(context, '/profile-setup');
+              },
             ),
             SwitchListTile(
-              value: _darkMode,
+              value: context.watch<ThemeProvider>().isDark,
               onChanged: (value) {
-                setState(() => _darkMode = value);
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Dark mode toggle is a demo indicator.')),
-                );
+                context.read<ThemeProvider>().toggle(value);
               },
               secondary: const Icon(Icons.nightlight_round),
               title: const Text('Dark mode'),

@@ -14,15 +14,20 @@ class SecondaryButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return OutlinedButton.icon(
-      onPressed: onPressed,
-      icon: icon ?? const SizedBox.shrink(),
-      label: Text(label),
-      style: OutlinedButton.styleFrom(
-        minimumSize: const Size(double.infinity, 54),
-        side: BorderSide(color: Theme.of(context).colorScheme.primary, width: 1.2),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        foregroundColor: Theme.of(context).colorScheme.primary,
+    final primary = Theme.of(context).colorScheme.primary;
+    return DecoratedBox(
+      decoration: BoxDecoration(boxShadow: [BoxShadow(color: primary.withOpacity(0.12), blurRadius: 14, offset: const Offset(0, 8))]),
+      child: OutlinedButton.icon(
+        onPressed: onPressed,
+        icon: icon ?? const SizedBox.shrink(),
+        label: Text(label),
+        style: OutlinedButton.styleFrom(
+          minimumSize: const Size(double.infinity, 54),
+          side: BorderSide(color: primary, width: 1.2),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
+          foregroundColor: primary,
+          overlayColor: primary.withOpacity(0.08),
+        ),
       ),
     );
   }

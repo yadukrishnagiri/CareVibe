@@ -24,6 +24,7 @@ app.use('/ai', require('./routes/chatRoutes'));
 app.use('/', require('./routes/doctorRoutes'));
 app.use('/', require('./routes/appointmentRoutes'));
 app.use('/', require('./routes/healthRoutes'));
+app.use('/profile', require('./routes/profileRoutes'));
 
 const PORT = process.env.PORT || 5000;
 

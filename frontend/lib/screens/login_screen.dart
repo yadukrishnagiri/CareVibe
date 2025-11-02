@@ -173,6 +173,18 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                       icon: const Icon(Icons.mail_outline),
                     ),
                     const SizedBox(height: 32),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Icon(Icons.bolt_rounded, size: 14, color: Colors.white70),
+                        const SizedBox(width: 6),
+                        Text(
+                          'Created by AI Avengers',
+                          style: GoogleFonts.inter(color: Colors.white.withOpacity(0.9), fontSize: 12, fontWeight: FontWeight.w600),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
                     Text(
                       'By continuing you agree to our Terms of Service and acknowledge this demo is not medical advice.',
                       textAlign: TextAlign.center,

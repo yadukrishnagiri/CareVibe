@@ -8,6 +8,11 @@ import '../services/metrics_api.dart';
 import '../theme/app_theme.dart';
 import '../utils/health_analytics.dart';
 import '../utils/exporters.dart';
+import '../theme/pro_mode_theme.dart';
+import '../widgets/pro_mode/top_command_bar.dart';
+import '../widgets/pro_mode/clinical_overview_card.dart';
+import '../widgets/pro_mode/surface_organ_health.dart';
+import '../widgets/pro_mode/vitals_strip.dart';
 
 class AnalyticsScreen extends StatefulWidget {
   const AnalyticsScreen({super.key});
@@ -59,7 +64,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
     return DefaultTabController(
       length: 6,
       child: Scaffold(
-        backgroundColor: _proMode ? const Color(0xFFF4F6FF) : AppColors.background,
+        backgroundColor: _proMode ? const Color(0xFF0B0F17) : Theme.of(context).scaffoldBackgroundColor,
         appBar: AppBar(
           title: const Text('Analytics'),
           actions: [
@@ -110,7 +115,9 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
                     ? const SizedBox.shrink()
                     : TabBarView(
                         children: [
-                          _OverviewTab(summary: s, metrics: visible, proMode: _proMode).animate().fadeIn(duration: 200.ms),
+                          _proMode
+                              ? _ProOverview(summary: s, metrics: visible).animate().fadeIn(duration: 200.ms)
+                              : _OverviewTab(summary: s, metrics: visible, proMode: false).animate().fadeIn(duration: 200.ms),
                           _SleepTab(metrics: visible, proMode: _proMode).animate().fadeIn(duration: 200.ms),
                           _ActivityTab(metrics: visible, summary: s, proMode: _proMode).animate().fadeIn(duration: 200.ms),
                           _HeartTab(metrics: visible, summary: s, proMode: _proMode).animate().fadeIn(duration: 200.ms),
@@ -118,6 +125,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
                           _WeightTab(metrics: visible, proMode: _proMode).animate().fadeIn(duration: 200.ms),
                         ],
                       ),
+        bottomNavigationBar: _proMode && s != null ? VitalsStrip(summary: s) : null,
       ),
     );
   }
@@ -162,14 +170,19 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(24),
         boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 16, offset: const Offset(0, 12))],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(title, style: Theme.of(context).textTheme.titleMedium),
+          Text(
+            title,
+            style: _proMode
+                ? const TextStyle(color: ProModeColors.textPrimary, fontSize: 16, fontWeight: FontWeight.w600)
+                : Theme.of(context).textTheme.titleMedium,
+          ),
           const SizedBox(height: 12),
           child,
         ],
@@ -189,7 +202,7 @@ class _ModeToggle extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(20),
-        color: Colors.white.withOpacity(0.14),
+        color: Theme.of(context).colorScheme.surface.withOpacity(0.14),
       ),
       child: Row(
         children: [
@@ -289,6 +302,31 @@ class _OverviewTab extends StatelessWidget {
               ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+class _ProOverview extends StatelessWidget {
+  const _ProOverview({required this.summary, required this.metrics});
+  final AnalyticsSummary summary;
+  final List<HealthMetricDto> metrics;
+
+  @override
+  Widget build(BuildContext context) {
+    return RefreshIndicator(
+      onRefresh: () async {},
+      child: ListView(
+        padding: const EdgeInsets.symmetric(horizontal: 0, vertical: 12),
+        children: [
+          const SizedBox(height: 8),
+          TopCommandBar(summary: summary),
+          const SizedBox(height: 12),
+          ClinicalOverviewCard(summary: summary),
+          const SizedBox(height: 16),
+          SurfaceOrganHealth(summary: summary, metrics: metrics),
+          const SizedBox(height: 24),
+        ],
       ),
     );
   }
@@ -610,14 +648,15 @@ class _SectionCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(24),
-        boxShadow: [
-          BoxShadow(color: proMode ? AppColors.primary.withOpacity(0.1) : Colors.black.withOpacity(0.05), blurRadius: proMode ? 22 : 16, offset: const Offset(0, 12)),
-        ],
-        border: proMode ? Border.all(color: AppColors.primary.withOpacity(0.12)) : null,
-      ),
+      decoration: proMode
+          ? GlassMorphism.card(borderOpacity: 0.12, radius: 24)
+          : BoxDecoration(
+              color: Theme.of(context).colorScheme.surface,
+              borderRadius: BorderRadius.circular(24),
+              boxShadow: [
+                BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 16, offset: const Offset(0, 12)),
+              ],
+            ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -637,13 +676,16 @@ class _LineChartSimple extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final grid = isDark ? Colors.white.withOpacity(0.18) : AppColors.textSecondary.withOpacity(0.08);
+    final border = isDark ? Colors.white.withOpacity(0.22) : AppColors.textSecondary.withOpacity(0.12);
     return LineChart(
       LineChartData(
         gridData: FlGridData(
           show: true,
           drawHorizontalLine: true,
           drawVerticalLine: false,
-          getDrawingHorizontalLine: (value) => FlLine(color: AppColors.textSecondary.withOpacity(0.08), strokeWidth: 1),
+          getDrawingHorizontalLine: (value) => FlLine(color: grid, strokeWidth: 1),
         ),
         titlesData: FlTitlesData(
           leftTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
@@ -651,7 +693,7 @@ class _LineChartSimple extends StatelessWidget {
           topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
           bottomTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
         ),
-        borderData: FlBorderData(show: true, border: Border.all(color: AppColors.textSecondary.withOpacity(0.08), width: 1)),
+        borderData: FlBorderData(show: true, border: Border.all(color: border, width: 1)),
         lineTouchData: LineTouchData(
           touchTooltipData: LineTouchTooltipData(
             tooltipRoundedRadius: 10,
@@ -694,7 +736,14 @@ class _ProInsight extends StatelessWidget {
       children: [
         const Icon(Icons.insights_rounded, size: 18, color: AppColors.primary),
         const SizedBox(width: 8),
-        Expanded(child: Text(text, style: Theme.of(context).textTheme.bodySmall)),
+        Expanded(
+          child: Text(
+            text,
+            style: Theme.of(context).brightness == Brightness.dark
+                ? const TextStyle(color: Colors.white70, fontSize: 12)
+                : Theme.of(context).textTheme.bodySmall,
+          ),
+        ),
       ],
     );
   }
@@ -783,22 +832,40 @@ class _MetricTile extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: proMode ? Colors.white : Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(color: proMode ? AppColors.primary.withOpacity(0.12) : Colors.black.withOpacity(0.05), blurRadius: proMode ? 18 : 12, offset: const Offset(0, 10)),
-        ],
-        border: proMode ? Border.all(color: AppColors.primary.withOpacity(0.15)) : null,
-      ),
+      decoration: proMode
+          ? GlassMorphism.card(borderOpacity: 0.12, radius: 20)
+          : BoxDecoration(
+              color: Theme.of(context).colorScheme.surface,
+              borderRadius: BorderRadius.circular(20),
+              boxShadow: [
+                BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 12, offset: const Offset(0, 10)),
+              ],
+            ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(label, style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: AppColors.textSecondary)),
-          Text(value, style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700)),
+          Text(
+            label,
+            style: proMode
+                ? const TextStyle(color: ProModeColors.textMuted)
+                : Theme.of(context).textTheme.bodyMedium,
+          ),
+          Text(
+            value,
+            style: proMode
+                ? const TextStyle(color: ProModeColors.textPrimary, fontSize: 22, fontWeight: FontWeight.w700)
+                : Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700),
+          ),
           if (subtitle != null)
-            Text(subtitle!, style: Theme.of(context).textTheme.bodySmall?.copyWith(color: AppColors.textSecondary), maxLines: 2, overflow: TextOverflow.ellipsis),
+            Text(
+              subtitle!,
+              style: proMode
+                  ? const TextStyle(color: ProModeColors.textMuted, fontSize: 12)
+                  : Theme.of(context).textTheme.bodySmall,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+            ),
         ],
       ),
     );

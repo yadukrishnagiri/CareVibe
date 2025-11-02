@@ -9,6 +9,7 @@ import 'package:provider/provider.dart';
 import '../providers/session_provider.dart';
 import '../providers/shell_controller.dart';
 import '../providers/auth_provider.dart';
+import '../providers/theme_provider.dart';
 import '../services/api.dart';
 import '../theme/app_theme.dart';
 
@@ -59,7 +60,7 @@ class _HomeScreenState extends State<HomeScreen> {
     final name = session.firebaseUser?.displayName ?? 'Patient';
 
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: RefreshIndicator(
         color: AppColors.primary,
         onRefresh: () async {
@@ -72,7 +73,7 @@ class _HomeScreenState extends State<HomeScreen> {
           physics: const AlwaysScrollableScrollPhysics(),
           slivers: [
             SliverAppBar(
-              backgroundColor: AppColors.background,
+              backgroundColor: Theme.of(context).scaffoldBackgroundColor,
               pinned: true,
               elevation: 0,
               title: Column(
@@ -83,6 +84,19 @@ class _HomeScreenState extends State<HomeScreen> {
                 ],
               ),
               actions: [
+                Builder(
+                  builder: (context) => IconButton(
+                    icon: Icon(
+                      Theme.of(context).brightness == Brightness.dark ? Icons.light_mode : Icons.dark_mode,
+                    ),
+                    onPressed: () {
+                      final isDark = Theme.of(context).brightness == Brightness.dark;
+                      // Toggle via ThemeProvider
+                      // ignore: use_build_context_synchronously
+                      context.read<ThemeProvider>().toggle(!isDark);
+                    },
+                  ),
+                ),
                 IconButton(
                   icon: const Icon(Icons.notifications_none_rounded),
                   onPressed: () => ScaffoldMessenger.of(context).showSnackBar(
@@ -183,7 +197,7 @@ class _HomeScreenState extends State<HomeScreen> {
       width: double.infinity,
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 12, offset: const Offset(0, 8)),
@@ -204,7 +218,7 @@ class _HomeScreenState extends State<HomeScreen> {
               children: [
                 Text(session.firebaseUser?.displayName ?? 'User', style: Theme.of(context).textTheme.titleMedium),
                 const SizedBox(height: 4),
-                Text(email, style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: AppColors.textSecondary)),
+                Text(email, style: Theme.of(context).textTheme.bodyMedium),
               ],
             ),
           ),
@@ -246,7 +260,7 @@ class _HomeScreenState extends State<HomeScreen> {
           width: math.max((MediaQuery.of(context).size.width - 64) / 2, 150),
           padding: const EdgeInsets.all(18),
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: Theme.of(context).colorScheme.surface,
             borderRadius: BorderRadius.circular(20),
             boxShadow: [
               BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 12, offset: const Offset(0, 8)),
@@ -349,7 +363,7 @@ class _EmptyStateCard extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(22),
         border: Border.all(color: Colors.blueGrey.withOpacity(0.08)),
       ),

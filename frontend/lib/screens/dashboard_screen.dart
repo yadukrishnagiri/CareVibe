@@ -51,7 +51,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     final steps = _metrics.isNotEmpty ? _metrics.last.stepCount : 5400;
 
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(title: const Text('Your Health Overview')),
       body: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
@@ -97,7 +97,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(24),
         boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 16, offset: const Offset(0, 12))],
       ),
