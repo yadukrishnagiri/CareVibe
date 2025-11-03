@@ -66,13 +66,37 @@ class HealthMetricDto {
 }
 
 class MetricsApi {
-  static Future<List<HealthMetricDto>> fetchMyMetrics(String jwt, {int days = 7}) async {
-    final r = await http.get(Uri.parse('$apiBase/metrics/me?days=$days'), headers: authHeaders(jwt));
+  static Future<List<HealthMetricDto>> fetchMyMetrics(String jwt, {int? days, DateTime? startDate, DateTime? endDate}) async {
+    String url;
+    
+    // Priority: use date range if both provided
+    if (startDate != null && endDate != null) {
+      final start = startDate.toIso8601String().split('T')[0];
+      final end = endDate.toIso8601String().split('T')[0];
+      url = '$apiBase/metrics/me?startDate=$start&endDate=$end';
+    } else {
+      // Fallback to days count
+      url = '$apiBase/metrics/me?days=${days ?? 7}';
+    }
+    
+    final r = await http.get(Uri.parse(url), headers: authHeaders(jwt));
     if (r.statusCode != 200) {
       throw Exception('Failed to fetch metrics (${r.statusCode})');
     }
     final list = jsonDecode(r.body) as List<dynamic>;
     return list.map((e) => HealthMetricDto.fromJson(e as Map<String, dynamic>)).toList().reversed.toList();
+  }
+
+  static Future<Map<String, dynamic>> analyzeMetrics(String jwt, {required DateTime startDate, required DateTime endDate}) async {
+    final start = startDate.toIso8601String().split('T')[0];
+    final end = endDate.toIso8601String().split('T')[0];
+    final url = '$apiBase/metrics/analyze?startDate=$start&endDate=$end';
+    
+    final r = await http.get(Uri.parse(url), headers: authHeaders(jwt));
+    if (r.statusCode != 200) {
+      throw Exception('Failed to analyze metrics (${r.statusCode})');
+    }
+    return jsonDecode(r.body) as Map<String, dynamic>;
   }
 }
 

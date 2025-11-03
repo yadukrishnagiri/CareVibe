@@ -26,12 +26,16 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
   AnalyticsSummary? _summary;
   bool _loading = false;
   String? _error;
-  int _rangeDays = 100;
+  DateTime? _startDate;
+  DateTime? _endDate;
   bool _proMode = false;
 
   @override
   void initState() {
     super.initState();
+    // Default to last 30 days
+    _endDate = DateTime.now();
+    _startDate = _endDate!.subtract(const Duration(days: 30));
     _load();
   }
 
@@ -41,10 +45,37 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
       final session = context.read<SessionProvider>();
       final jwt = session.jwt;
       if (jwt == null) throw Exception('Not authenticated');
-      final list = await MetricsApi.fetchMyMetrics(jwt, days: 120);
-      final sliced = _slice(list, _rangeDays);
-      final summary = computeAnalytics(sliced);
-      setState(() { _metrics = list; _summary = summary; });
+      
+      // Validate date range
+      if (_startDate == null || _endDate == null) {
+        throw Exception('Please select a valid date range');
+      }
+      
+      if (_startDate!.isAfter(_endDate!)) {
+        throw Exception('Start date must be before end date');
+      }
+      
+      // Fetch metrics using date range
+      final list = await MetricsApi.fetchMyMetrics(
+        jwt, 
+        startDate: _startDate, 
+        endDate: _endDate
+      );
+      
+      if (list.isEmpty) {
+        setState(() {
+          _metrics = [];
+          _summary = null;
+          _error = 'No health data available for the selected date range';
+        });
+        return;
+      }
+      
+      final summary = computeAnalytics(list);
+      setState(() { 
+        _metrics = list; 
+        _summary = summary; 
+      });
     } catch (e) {
       setState(() { _error = e.toString(); });
     } finally {
@@ -52,15 +83,36 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
     }
   }
 
-  List<HealthMetricDto> _slice(List<HealthMetricDto> all, int days) {
-    if (all.length <= days) return List.of(all);
-    return all.sublist(all.length - days);
+  void _pickDateRange() async {
+    final picked = await showDateRangePicker(
+      context: context,
+      firstDate: DateTime(2020),
+      lastDate: DateTime.now(),
+      initialDateRange: DateTimeRange(
+        start: _startDate ?? DateTime.now().subtract(const Duration(days: 30)),
+        end: _endDate ?? DateTime.now(),
+      ),
+    );
+    
+    if (picked != null) {
+      setState(() {
+        _startDate = picked.start;
+        _endDate = picked.end;
+      });
+      _load();
+    }
+  }
+
+  String _formatDateRange() {
+    if (_startDate == null || _endDate == null) return 'Select dates';
+    final start = '${_startDate!.month}/${_startDate!.day}';
+    final end = '${_endDate!.month}/${_endDate!.day}/${_endDate!.year}';
+    return '$start - $end';
   }
 
   @override
   Widget build(BuildContext context) {
     final s = _summary;
-    final visible = _slice(_metrics, _rangeDays);
     return DefaultTabController(
       length: 6,
       child: Scaffold(
@@ -68,17 +120,24 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
         appBar: AppBar(
           title: const Text('Analytics'),
           actions: [
-            DropdownButtonHideUnderline(
-              child: DropdownButton<int>(
-                value: _rangeDays,
-                items: const [30, 60, 90, 100, 120]
-                    .map((d) => DropdownMenuItem(value: d, child: Text('$d d')))
-                    .toList(),
-                onChanged: (v) {
-                  if (v == null) return;
-                  setState(() { _rangeDays = v; _summary = computeAnalytics(_slice(_metrics, _rangeDays)); });
-                },
+            TextButton.icon(
+              onPressed: _pickDateRange,
+              icon: const Icon(Icons.calendar_today, size: 16),
+              label: Text(_formatDateRange(), style: const TextStyle(fontSize: 12)),
+              style: TextButton.styleFrom(
+                foregroundColor: Theme.of(context).colorScheme.primary,
               ),
+            ),
+            IconButton(
+              icon: const Icon(Icons.refresh, size: 20),
+              tooltip: 'Reset to last 30 days',
+              onPressed: () {
+                setState(() {
+                  _endDate = DateTime.now();
+                  _startDate = _endDate!.subtract(const Duration(days: 30));
+                });
+                _load();
+              },
             ),
             const SizedBox(width: 4),
             _ModeToggle(
@@ -116,13 +175,13 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
                     : TabBarView(
                         children: [
                           _proMode
-                              ? _ProOverview(summary: s, metrics: visible).animate().fadeIn(duration: 200.ms)
-                              : _OverviewTab(summary: s, metrics: visible, proMode: false).animate().fadeIn(duration: 200.ms),
-                          _SleepTab(metrics: visible, proMode: _proMode).animate().fadeIn(duration: 200.ms),
-                          _ActivityTab(metrics: visible, summary: s, proMode: _proMode).animate().fadeIn(duration: 200.ms),
-                          _HeartTab(metrics: visible, summary: s, proMode: _proMode).animate().fadeIn(duration: 200.ms),
-                          _StressTab(metrics: visible, proMode: _proMode).animate().fadeIn(duration: 200.ms),
-                          _WeightTab(metrics: visible, proMode: _proMode).animate().fadeIn(duration: 200.ms),
+                              ? _ProOverview(summary: s, metrics: _metrics).animate().fadeIn(duration: 200.ms)
+                              : _OverviewTab(summary: s, metrics: _metrics, proMode: false).animate().fadeIn(duration: 200.ms),
+                          _SleepTab(metrics: _metrics, proMode: _proMode).animate().fadeIn(duration: 200.ms),
+                          _ActivityTab(metrics: _metrics, summary: s, proMode: _proMode).animate().fadeIn(duration: 200.ms),
+                          _HeartTab(metrics: _metrics, summary: s, proMode: _proMode).animate().fadeIn(duration: 200.ms),
+                          _StressTab(metrics: _metrics, proMode: _proMode).animate().fadeIn(duration: 200.ms),
+                          _WeightTab(metrics: _metrics, proMode: _proMode).animate().fadeIn(duration: 200.ms),
                         ],
                       ),
         bottomNavigationBar: _proMode && s != null ? VitalsStrip(summary: s) : null,
@@ -133,32 +192,88 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
   void _openExportSheet(BuildContext context) {
     showModalBottomSheet(
       context: context,
-      backgroundColor: Colors.white,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
-      builder: (_) {
-        final slice = _slice(_metrics, _rangeDays);
+      builder: (bottomSheetContext) {
         final s = _summary;
         return SafeArea(
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
+              const SizedBox(height: 12),
+              Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: Colors.grey[300],
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
               ListTile(
-                leading: const Icon(Icons.picture_as_pdf_rounded),
+                leading: Icon(Icons.picture_as_pdf_rounded, color: Theme.of(context).colorScheme.primary),
                 title: const Text('Share PDF report'),
                 onTap: () async {
-                  Navigator.of(context).pop();
-                  if (s != null) await shareAnalyticsPdf(summary: s, data: slice);
+                  Navigator.of(bottomSheetContext).pop();
+                  
+                  if (_metrics.isEmpty) {
+                    if (mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('No data available to export')),
+                      );
+                    }
+                    return;
+                  }
+                  
+                  if (s != null && _startDate != null && _endDate != null) {
+                    final session = context.read<SessionProvider>();
+                    final jwt = session.jwt;
+                    if (jwt != null) {
+                      try {
+                        await shareAnalyticsPdf(
+                          summary: s,
+                          data: _metrics,
+                          jwt: jwt,
+                          startDate: _startDate!,
+                          endDate: _endDate!,
+                        );
+                      } catch (e) {
+                        if (mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(content: Text('Failed to generate PDF: ${e.toString()}')),
+                          );
+                        }
+                      }
+                    }
+                  }
                 },
               ),
               ListTile(
-                leading: const Icon(Icons.table_rows_rounded),
+                leading: Icon(Icons.table_rows_rounded, color: Theme.of(context).colorScheme.primary),
                 title: const Text('Export CSV'),
                 onTap: () async {
-                  Navigator.of(context).pop();
-                  await shareCsv(slice);
+                  Navigator.of(bottomSheetContext).pop();
+                  
+                  if (_metrics.isEmpty) {
+                    if (mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('No data available to export')),
+                      );
+                    }
+                    return;
+                  }
+                  
+                  try {
+                    await shareCsv(_metrics);
+                  } catch (e) {
+                    if (mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text('Failed to export CSV: ${e.toString()}')),
+                      );
+                    }
+                  }
                 },
               ),
-              const SizedBox(height: 6),
+              const SizedBox(height: 12),
             ],
           ),
         );

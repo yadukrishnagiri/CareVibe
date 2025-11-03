@@ -50,7 +50,13 @@ Future<void> shareCsv(List<HealthMetricDto> data, {String filename = 'CareVibe_A
   await Share.shareXFiles([file], text: 'CareVibe export');
 }
 
-Future<Uint8List> buildAnalyticsPdfBytes({required AnalyticsSummary summary, required List<HealthMetricDto> data, String title = 'CareVibe Analytics Report'}) async {
+Future<Uint8List> buildAnalyticsPdfBytes({
+  required AnalyticsSummary summary,
+  required List<HealthMetricDto> data,
+  String title = 'CareVibe Analytics Report',
+  String? dateRange,
+  String? aiSummary,
+}) async {
   final doc = pw.Document();
 
   List<pw.Widget> _metricsTable() {
@@ -100,8 +106,17 @@ Future<Uint8List> buildAnalyticsPdfBytes({required AnalyticsSummary summary, req
       build: (ctx) => [
         pw.Text(title, style: pw.TextStyle(fontSize: 20, fontWeight: pw.FontWeight.bold)),
         pw.SizedBox(height: 6),
-        pw.Text('Date range: last ${data.length} days'),
+        pw.Text(dateRange ?? 'Date range: last ${data.length} days'),
         pw.SizedBox(height: 16),
+        
+        // AI-Generated Summary section
+        if (aiSummary != null && aiSummary.isNotEmpty) ...[
+          pw.Text('AI Health Analysis', style: pw.TextStyle(fontSize: 16, fontWeight: pw.FontWeight.bold)),
+          pw.SizedBox(height: 8),
+          pw.Text(aiSummary, style: const pw.TextStyle(fontSize: 11), textAlign: pw.TextAlign.justify),
+          pw.SizedBox(height: 16),
+        ],
+        
         ..._metricsTable(),
         if (notes.isNotEmpty) ...[
           pw.SizedBox(height: 18),
@@ -122,8 +137,33 @@ Future<Uint8List> buildAnalyticsPdfBytes({required AnalyticsSummary summary, req
   return doc.save();
 }
 
-Future<void> shareAnalyticsPdf({required AnalyticsSummary summary, required List<HealthMetricDto> data}) async {
-  final bytes = await buildAnalyticsPdfBytes(summary: summary, data: data);
+Future<void> shareAnalyticsPdf({
+  required AnalyticsSummary summary,
+  required List<HealthMetricDto> data,
+  required String jwt,
+  required DateTime startDate,
+  required DateTime endDate,
+}) async {
+  // Fetch AI analysis from backend
+  String? aiSummary;
+  String? dateRange;
+  
+  try {
+    final analysis = await MetricsApi.analyzeMetrics(jwt, startDate: startDate, endDate: endDate);
+    aiSummary = analysis['summary'] as String?;
+    dateRange = analysis['dateRange'] as String?;
+  } catch (e) {
+    // If AI analysis fails, continue without it
+    print('Failed to fetch AI analysis: $e');
+  }
+  
+  final bytes = await buildAnalyticsPdfBytes(
+    summary: summary,
+    data: data,
+    dateRange: dateRange ?? 'Report Period: ${startDate.month}/${startDate.day}/${startDate.year} - ${endDate.month}/${endDate.day}/${endDate.year}',
+    aiSummary: aiSummary,
+  );
+  
   await Printing.sharePdf(bytes: bytes, filename: 'CareVibe_Analytics.pdf');
 }
 
