@@ -26,25 +26,52 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   Future<void> _load() async {
-    setState(() { _loading = true; _error = null; });
+    setState(() {
+      _loading = true;
+      _error = null;
+    });
     try {
       final session = context.read<SessionProvider>();
       final jwt = session.jwt;
       if (jwt == null) throw Exception('Not authenticated');
       final list = await MetricsApi.fetchMyMetrics(jwt, days: 7);
-      setState(() { _metrics = list; });
+      setState(() {
+        _metrics = list;
+      });
     } catch (e) {
-      setState(() { _error = e.toString(); });
+      setState(() {
+        _error = e.toString();
+      });
     } finally {
-      if (mounted) setState(() { _loading = false; });
+      if (mounted)
+        setState(() {
+          _loading = false;
+        });
     }
   }
 
   @override
   Widget build(BuildContext context) {
     final heartSpots = _metrics.isNotEmpty
-        ? _metrics.asMap().entries.map((e) => FlSpot(e.key.toDouble(), e.value.restingHeartRateBpm.toDouble())).toList()
-        : [FlSpot(0, 72), FlSpot(1, 76), FlSpot(2, 74), FlSpot(3, 78), FlSpot(4, 73), FlSpot(5, 71), FlSpot(6, 75)];
+        ? _metrics
+              .asMap()
+              .entries
+              .map(
+                (e) => FlSpot(
+                  e.key.toDouble(),
+                  e.value.restingHeartRateBpm.toDouble(),
+                ),
+              )
+              .toList()
+        : [
+            FlSpot(0, 72),
+            FlSpot(1, 76),
+            FlSpot(2, 74),
+            FlSpot(3, 78),
+            FlSpot(4, 73),
+            FlSpot(5, 71),
+            FlSpot(6, 75),
+          ];
     final sleepBars = _metrics.isNotEmpty
         ? _metrics.map((m) => m.sleepDurationHr).toList()
         : [6.5, 7.2, 8.1, 5.9, 7.6, 8.0, 7.4];
@@ -58,48 +85,72 @@ class _DashboardScreenState extends State<DashboardScreen> {
         child: _loading
             ? const Center(child: CircularProgressIndicator())
             : _error != null
-                ? Center(child: Text(_error!, style: Theme.of(context).textTheme.bodyLarge))
-                : ListView(
-                    children: [
-                      _PeriodSelector().animate().fadeIn(duration: 250.ms),
-                      const SizedBox(height: 18),
-                      _buildChartCard(
-                        context,
-                        title: 'Heart rate trend',
-                        child: SizedBox(height: 180, child: _HeartRateChart(spots: heartSpots)),
-                      ),
-                      const SizedBox(height: 18),
-                      _buildChartCard(
-                        context,
-                        title: 'Sleep hours',
-                        child: SizedBox(height: 180, child: _SleepBarChart(bars: sleepBars)),
-                      ),
-                      const SizedBox(height: 18),
-                      _buildChartCard(
-                        context,
-                        title: 'Steps goal',
-                        child: _StepsRadial(completed: steps),
-                      ),
-                      const SizedBox(height: 18),
-                      _InsightCard(
+            ? Center(
+                child: Text(
+                  _error!,
+                  style: Theme.of(context).textTheme.bodyLarge,
+                ),
+              )
+            : ListView(
+                children: [
+                  _PeriodSelector().animate().fadeIn(duration: 250.ms),
+                  const SizedBox(height: 18),
+                  _buildChartCard(
+                    context,
+                    title: 'Heart rate trend',
+                    child: SizedBox(
+                      height: 180,
+                      child: _HeartRateChart(spots: heartSpots),
+                    ),
+                  ),
+                  const SizedBox(height: 18),
+                  _buildChartCard(
+                    context,
+                    title: 'Sleep hours',
+                    child: SizedBox(
+                      height: 180,
+                      child: _SleepBarChart(bars: sleepBars),
+                    ),
+                  ),
+                  const SizedBox(height: 18),
+                  _buildChartCard(
+                    context,
+                    title: 'Steps goal',
+                    child: _StepsRadial(completed: steps),
+                  ),
+                  const SizedBox(height: 18),
+                  _InsightCard(
                         text: _metrics.isNotEmpty
                             ? 'Latest: ${_metrics.last.stepCount} steps, ${_metrics.last.sleepDurationHr.toStringAsFixed(1)}h sleep, HR ${_metrics.last.restingHeartRateBpm} bpm.'
                             : 'You walked 5,400 steps yesterday — great job! Keep your momentum with a quick evening stroll.',
-                      ).animate().fadeIn(duration: 300.ms, delay: 200.ms).slideY(begin: 0.2),
-                      const SizedBox(height: 80),
-                    ],
-                  ),
+                      )
+                      .animate()
+                      .fadeIn(duration: 300.ms, delay: 200.ms)
+                      .slideY(begin: 0.2),
+                  const SizedBox(height: 80),
+                ],
+              ),
       ),
     );
   }
 
-  Widget _buildChartCard(BuildContext context, {required String title, required Widget child}) {
+  Widget _buildChartCard(
+    BuildContext context, {
+    required String title,
+    required Widget child,
+  }) {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(24),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 16, offset: const Offset(0, 12))],
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 16,
+            offset: const Offset(0, 12),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -154,7 +205,15 @@ class _HeartRateChart extends StatelessWidget {
             sideTitles: SideTitles(
               showTitles: true,
               getTitlesWidget: (value, meta) {
-                const labels = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+                const labels = [
+                  'Mon',
+                  'Tue',
+                  'Wed',
+                  'Thu',
+                  'Fri',
+                  'Sat',
+                  'Sun',
+                ];
                 if (value.toInt() >= 0 && value.toInt() < labels.length) {
                   return Text(labels[value.toInt()]);
                 }
@@ -170,13 +229,18 @@ class _HeartRateChart extends StatelessWidget {
           LineChartBarData(
             spots: spots,
             isCurved: true,
-            gradient: const LinearGradient(colors: [AppColors.primary, Color(0xFF60A5FA)]),
+            gradient: const LinearGradient(
+              colors: [AppColors.primary, Color(0xFF60A5FA)],
+            ),
             barWidth: 4,
             dotData: FlDotData(show: false),
             belowBarData: BarAreaData(
               show: true,
               gradient: LinearGradient(
-                colors: [AppColors.primary.withOpacity(0.3), Colors.transparent],
+                colors: [
+                  AppColors.primary.withOpacity(0.3),
+                  Colors.transparent,
+                ],
                 begin: Alignment.topCenter,
                 end: Alignment.bottomCenter,
               ),
@@ -203,7 +267,15 @@ class _SleepBarChart extends StatelessWidget {
             sideTitles: SideTitles(
               showTitles: true,
               getTitlesWidget: (value, meta) {
-                const labels = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+                const labels = [
+                  'Mon',
+                  'Tue',
+                  'Wed',
+                  'Thu',
+                  'Fri',
+                  'Sat',
+                  'Sun',
+                ];
                 if (value.toInt() >= 0 && value.toInt() < labels.length) {
                   return Text(labels[value.toInt()]);
                 }
@@ -223,7 +295,9 @@ class _SleepBarChart extends StatelessWidget {
                 toY: bars[index],
                 width: 18,
                 borderRadius: BorderRadius.circular(8),
-                gradient: const LinearGradient(colors: [AppColors.primary, AppColors.secondary]),
+                gradient: const LinearGradient(
+                  colors: [AppColors.primary, AppColors.secondary],
+                ),
               ),
             ],
           );
@@ -257,7 +331,10 @@ class _StepsRadial extends StatelessWidget {
           Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Text('$completed steps', style: Theme.of(context).textTheme.titleLarge),
+              Text(
+                '$completed steps',
+                style: Theme.of(context).textTheme.titleLarge,
+              ),
               const SizedBox(height: 4),
               Text('Goal $goal', style: Theme.of(context).textTheme.bodyMedium),
             ],
@@ -275,22 +352,41 @@ class _InsightCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: scheme.surface,
         borderRadius: BorderRadius.circular(22),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 12, offset: const Offset(0, 8))],
+        border: Border.all(color: scheme.outline.withOpacity(0.45)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(
+              Theme.of(context).brightness == Brightness.dark ? 0.2 : 0.06,
+            ),
+            blurRadius: 14,
+            offset: const Offset(0, 10),
+          ),
+        ],
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Icon(Icons.insights_rounded, color: AppColors.secondary),
+          Icon(
+            Icons.insights_rounded,
+            color: AppColors.secondary.withOpacity(0.9),
+          ),
           const SizedBox(width: 12),
-          Expanded(child: Text(text, style: Theme.of(context).textTheme.bodyLarge)),
+          Expanded(
+            child: Text(
+              text,
+              style: Theme.of(
+                context,
+              ).textTheme.bodyLarge?.copyWith(color: scheme.onSurface),
+            ),
+          ),
         ],
       ),
     );
   }
 }
-

@@ -33,12 +33,16 @@ class _ChatScreenState extends State<ChatScreen> {
     Future.delayed(const Duration(milliseconds: 400), () {
       if (!mounted) return;
       final session = context.read<SessionProvider>();
-      final name = session.firebaseUser?.displayName?.split(' ').first ?? 'there';
+      final name =
+          session.firebaseUser?.displayName?.split(' ').first ?? 'there';
       setState(() {
-        _messages.add(ChatMessage(
-          sender: Sender.ai,
-          text: 'Hi $name, I’m your CareVibe assistant. Ask me anything about your symptoms or wellness!',
-        ));
+        _messages.add(
+          ChatMessage(
+            sender: Sender.ai,
+            text:
+                'Hi $name, I’m your CareVibe assistant. Ask me anything about your symptoms or wellness!',
+          ),
+        );
       });
     });
   }
@@ -49,7 +53,9 @@ class _ChatScreenState extends State<ChatScreen> {
     final jwt = session.jwt;
     if (!session.isAuthenticated || jwt == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please sign in again to continue chatting.')),
+        const SnackBar(
+          content: Text('Please sign in again to continue chatting.'),
+        ),
       );
       return;
     }
@@ -77,19 +83,26 @@ class _ChatScreenState extends State<ChatScreen> {
         throw Exception('Chat service unavailable (${response.statusCode})');
       }
       final json = jsonDecode(response.body) as Map<String, dynamic>;
-      final reply = json['reply']?.toString() ?? 'I am still thinking. Could you rephrase that?';
+      final reply =
+          json['reply']?.toString() ??
+          'I am still thinking. Could you rephrase that?';
       final warning = json['warning']?.toString();
       setState(() {
-        _messages.add(ChatMessage(sender: Sender.ai, text: reply, warning: warning));
+        _messages.add(
+          ChatMessage(sender: Sender.ai, text: reply, warning: warning),
+        );
       });
       // Also let AI replies influence context if it suggests a specialty or urgency
       chatCtx.updateFromText(reply);
     } catch (e) {
       setState(() {
-        _messages.add(ChatMessage(
-          sender: Sender.ai,
-          text: 'I ran into a connection issue. Please try again in a moment.',
-        ));
+        _messages.add(
+          ChatMessage(
+            sender: Sender.ai,
+            text:
+                'I ran into a connection issue. Please try again in a moment.',
+          ),
+        );
       });
     } finally {
       setState(() {
@@ -113,7 +126,9 @@ class _ChatScreenState extends State<ChatScreen> {
   @override
   Widget build(BuildContext context) {
     final session = context.watch<SessionProvider>();
-    final statusColor = session.isAuthenticated ? Colors.greenAccent : Colors.redAccent;
+    final statusColor = session.isAuthenticated
+        ? Colors.greenAccent
+        : Colors.redAccent;
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -121,21 +136,31 @@ class _ChatScreenState extends State<ChatScreen> {
         titleSpacing: 0,
         title: Row(
           children: [
-            const CircleAvatar(radius: 18, backgroundColor: AppColors.primary, child: Icon(Icons.favorite, color: Colors.white, size: 18)),
+            const CircleAvatar(
+              radius: 18,
+              backgroundColor: AppColors.primary,
+              child: Icon(Icons.favorite, color: Colors.white, size: 18),
+            ),
             const SizedBox(width: 12),
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('AI Health Assistant', style: Theme.of(context).textTheme.titleMedium),
+                Text(
+                  'AI Health Assistant',
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
                 Row(
                   children: [
                     Icon(Icons.circle, color: statusColor, size: 8),
                     const SizedBox(width: 6),
-                    Text(session.isAuthenticated ? 'Online' : 'Offline', style: Theme.of(context).textTheme.bodySmall),
+                    Text(
+                      session.isAuthenticated ? 'Online' : 'Offline',
+                      style: Theme.of(context).textTheme.bodySmall,
+                    ),
                   ],
                 ),
               ],
-            )
+            ),
           ],
         ),
         actions: [
@@ -148,7 +173,12 @@ class _ChatScreenState extends State<ChatScreen> {
                 content: const Text(
                   'This chatbot provides general wellness guidance only. For urgent or personal medical advice, contact a licensed professional.',
                 ),
-                actions: [TextButton(onPressed: () => Navigator.pop(context), child: const Text('Got it'))],
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.pop(context),
+                    child: const Text('Got it'),
+                  ),
+                ],
               ),
             ),
           ),
@@ -176,9 +206,19 @@ class _ChatScreenState extends State<ChatScreen> {
               margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: Theme.of(context).colorScheme.surface,
                 borderRadius: BorderRadius.circular(24),
-                boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 12, offset: const Offset(0, 6))],
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(
+                      Theme.of(context).brightness == Brightness.dark
+                          ? 0.25
+                          : 0.08,
+                    ),
+                    blurRadius: 16,
+                    offset: const Offset(0, 10),
+                  ),
+                ],
               ),
               child: Row(
                 children: [
@@ -189,7 +229,20 @@ class _ChatScreenState extends State<ChatScreen> {
                       maxLines: 4,
                       textInputAction: TextInputAction.send,
                       onSubmitted: (_) => _sendMessage(),
-                      decoration: const InputDecoration.collapsed(hintText: 'Ask about symptoms, lifestyle or medication…'),
+                      cursorColor: AppColors.primary,
+                      style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                        color: Theme.of(context).colorScheme.onSurface,
+                      ),
+                      decoration: InputDecoration.collapsed(
+                        hintText:
+                            'Ask about symptoms, lifestyle or medication…',
+                        hintStyle: Theme.of(context).textTheme.bodyMedium
+                            ?.copyWith(
+                              color: Theme.of(
+                                context,
+                              ).colorScheme.onSurface.withOpacity(0.55),
+                            ),
+                      ),
                     ),
                   ),
                   const SizedBox(width: 12),
@@ -200,14 +253,21 @@ class _ChatScreenState extends State<ChatScreen> {
                       duration: const Duration(milliseconds: 180),
                       padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
-                        color: _isSending ? AppColors.secondary.withOpacity(0.5) : AppColors.secondary,
+                        color: _isSending
+                            ? AppColors.secondary.withOpacity(0.5)
+                            : AppColors.secondary,
                         shape: BoxShape.circle,
                       ),
                       child: _isSending
                           ? const SizedBox(
                               height: 18,
                               width: 18,
-                              child: CircularProgressIndicator(strokeWidth: 2, valueColor: AlwaysStoppedAnimation<Color>(Colors.white)),
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                valueColor: AlwaysStoppedAnimation<Color>(
+                                  Colors.white,
+                                ),
+                              ),
                             )
                           : const Icon(Icons.send_rounded, color: Colors.white),
                     ),
@@ -253,37 +313,59 @@ class _ChatBubble extends StatelessWidget {
 
     return Align(
       alignment: alignment,
-      child: Container(
-        margin: const EdgeInsets.symmetric(vertical: 6),
-        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
-        constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.75),
-        decoration: BoxDecoration(
-          color: backgroundColor,
-          borderRadius: BorderRadius.only(
-            topLeft: const Radius.circular(22),
-            topRight: const Radius.circular(22),
-            bottomLeft: Radius.circular(isUser ? 22 : 6),
-            bottomRight: Radius.circular(isUser ? 6 : 22),
-          ),
-          boxShadow: [
-            BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 8, offset: const Offset(0, 4)),
-          ],
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(message.text, style: Theme.of(context).textTheme.bodyLarge?.copyWith(color: textColor, height: 1.4)),
-            if (message.warning != null)
-              Padding(
-                padding: const EdgeInsets.only(top: 8.0),
-                child: Text(
-                  message.warning!,
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(color: AppColors.danger.withOpacity(0.9)),
+      child:
+          Container(
+                margin: const EdgeInsets.symmetric(vertical: 6),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 18,
+                  vertical: 14,
                 ),
-              ),
-          ],
-        ),
-      ).animate().fadeIn(duration: 250.ms).slideX(begin: isUser ? 0.2 : -0.2, curve: Curves.easeOut),
+                constraints: BoxConstraints(
+                  maxWidth: MediaQuery.of(context).size.width * 0.75,
+                ),
+                decoration: BoxDecoration(
+                  color: backgroundColor,
+                  borderRadius: BorderRadius.only(
+                    topLeft: const Radius.circular(22),
+                    topRight: const Radius.circular(22),
+                    bottomLeft: Radius.circular(isUser ? 22 : 6),
+                    bottomRight: Radius.circular(isUser ? 6 : 22),
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.04),
+                      blurRadius: 8,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      message.text,
+                      style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                        color: textColor,
+                        height: 1.4,
+                      ),
+                    ),
+                    if (message.warning != null)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 8.0),
+                        child: Text(
+                          message.warning!,
+                          style: Theme.of(context).textTheme.bodySmall
+                              ?.copyWith(
+                                color: AppColors.danger.withOpacity(0.9),
+                              ),
+                        ),
+                      ),
+                  ],
+                ),
+              )
+              .animate()
+              .fadeIn(duration: 250.ms)
+              .slideX(begin: isUser ? 0.2 : -0.2, curve: Curves.easeOut),
     );
   }
 }
@@ -301,7 +383,13 @@ class _TypingIndicator extends StatelessWidget {
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(18),
-          boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 6, offset: const Offset(0, 3))],
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.05),
+              blurRadius: 6,
+              offset: const Offset(0, 3),
+            ),
+          ],
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
@@ -326,13 +414,15 @@ class _Dot extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: 8,
-      height: 8,
-      decoration: const BoxDecoration(
-        shape: BoxShape.circle,
-        color: AppColors.primary,
-      ),
-    ).animate(onPlay: (controller) => controller.repeat()).scale(
+          width: 8,
+          height: 8,
+          decoration: const BoxDecoration(
+            shape: BoxShape.circle,
+            color: AppColors.primary,
+          ),
+        )
+        .animate(onPlay: (controller) => controller.repeat())
+        .scale(
           begin: const Offset(0.6, 0.6),
           end: const Offset(1, 1),
           duration: const Duration(milliseconds: 600),
@@ -340,5 +430,3 @@ class _Dot extends StatelessWidget {
         );
   }
 }
-
-
