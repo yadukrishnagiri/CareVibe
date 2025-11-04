@@ -4,10 +4,9 @@ on:
   push:
     branches: [ "main" ]
   pull_request:
-    # The branches below must be a subset of the branches above
     branches: [ "main" ]
   schedule:
-    - cron: '0 0 * * 0'  # Weekly scan
+    - cron: '0 0 * * 0'
 
 jobs:
   analyze:
@@ -21,19 +20,27 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        language: [ 'javascript' ]  # For Node.js
+        language: [ 'javascript' ]
 
     steps:
     - name: Checkout repository
       uses: actions/checkout@v4
+
+    - name: Set up Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+
+    - name: Install dependencies
+      run: npm install
 
     - name: Initialize CodeQL
       uses: github/codeql-action/init@v3
       with:
         languages: ${{ matrix.language }}
 
-    - name: Autobuild
-      uses: github/codeql-action/autobuild@v3
+    - name: Build project
+      run: npm run build  # or skip if not needed
 
     - name: Perform CodeQL Analysis
       uses: github/codeql-action/analyze@v3
