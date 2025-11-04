@@ -1,13 +1,3 @@
-name: "CodeQL"
-
-on:
-  push:
-    branches: [ "main" ]
-  pull_request:
-    branches: [ "main" ]
-  schedule:
-    - cron: '0 0 * * 0'
-
 jobs:
   analyze:
     name: Analyze
@@ -23,24 +13,22 @@ jobs:
         language: [ 'javascript' ]
 
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-    - name: Set up Node.js
-      uses: actions/setup-node@v4
-      with:
-        node-version: '22'
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v3
+        with:
+          languages: ${{ matrix.language }}
 
-    - name: Install dependencies
-      run: npm install
+      - name: Install dependencies
+        run: |
+          if [ -f package.json ]; then
+            npm ci || npm install
+          fi
 
-    - name: Initialize CodeQL
-      uses: github/codeql-action/init@v3
-      with:
-        languages: ${{ matrix.language }}
+      - name: Autobuild
+        uses: github/codeql-action/autobuild@v3
 
-    - name: Build project
-      run: npm run build  # or skip if not needed
-
-    - name: Perform CodeQL Analysis
-      uses: github/codeql-action/analyze@v3
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v3
