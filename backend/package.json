@@ -5,9 +5,8 @@
   "main": "src/server.js",
   "type": "commonjs",
   "scripts": {
-  "dev": "nodemon src/server.js",
-  "start": "node src/server.js",
-  "start:render": "bash ./scripts/render_start.sh",
+    "dev": "nodemon src/server.js",
+    "start": "node src/server.js",
     "test:groq": "node scripts/testGroqConnection.js",
     "test:mongo": "node scripts/testMongoConnection.js",
     "validate:data": "node scripts/validateData.js",
