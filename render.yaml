@@ -6,7 +6,7 @@ services:
     branch: main
     region: oregon
     buildCommand: "cd backend && npm install"
-    startCommand: "cd backend && npm run start:render"
+  startCommand: "cd backend && bash ./scripts/render_start.sh"
     envVars:
       - key: PORT
         value: "5000"
