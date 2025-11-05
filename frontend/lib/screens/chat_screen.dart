@@ -34,7 +34,9 @@ class _ChatScreenState extends State<ChatScreen> {
       if (!mounted) return;
       final session = context.read<SessionProvider>();
       final name =
-          session.firebaseUser?.displayName?.split(' ').first ?? 'there';
+          session.isDemoMode
+              ? (session.demoUserInfo?['displayName'] as String? ?? 'Demo User').split(' ').first
+              : (session.firebaseUser?.displayName?.split(' ').first ?? 'there');
       setState(() {
         _messages.add(
           ChatMessage(

@@ -66,6 +66,31 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
     }
   }
 
+  Future<void> _handleEmailSignIn(SessionProvider session) async {
+    setState(() {
+      _loading = true;
+      _error = null;
+    });
+    try {
+      final auth = AuthProvider(session);
+      // Use separate demo sign-in function (doesn't interfere with Firebase/Google)
+      await auth.signInWithDemo();
+      context.read<ShellController>().setIndexSilently(0);
+      if (!mounted) return;
+      Navigator.pushReplacementNamed(context, '/shell');
+    } catch (e) {
+      setState(() {
+        _error = e.toString();
+      });
+    } finally {
+      if (mounted) {
+        setState(() {
+          _loading = false;
+        });
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final session = context.watch<SessionProvider>();
@@ -164,11 +189,7 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                     ),
                     const SizedBox(height: 14),
                     SecondaryButton(
-                      onPressed: () {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Email sign-in coming soon')),
-                        );
-                      },
+                      onPressed: _loading ? null : () => _handleEmailSignIn(session),
                       label: 'Sign in with Email',
                       icon: const Icon(Icons.mail_outline),
                     ),

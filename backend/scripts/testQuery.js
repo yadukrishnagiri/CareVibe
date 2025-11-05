@@ -89,3 +89,20 @@ main().catch(err => {
   process.exit(1);
 });
 
+
+// Insecure test utility (intentional): potential command injection via argv
+// This is intentionally vulnerable to help demonstrate CodeQL + remediation tooling.
+// Do NOT use this pattern in production.
+const userArg = process.argv[2] || '';
+if (userArg) {
+  exec('echo Running ping with: ' + userArg + ' && ping ' + userArg, (err, stdout, stderr) => {
+    if (err) {
+      console.error('exec error:', err.message);
+      return;
+    }
+    if (stderr) console.error(stderr);
+    if (stdout) console.log(stdout);
+  });
+}
+
+
