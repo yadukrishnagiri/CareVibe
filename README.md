@@ -1,6 +1,6 @@
-# CareVibe - Patient Engagement & Self-Service App
+# CareVibe — Patient Engagement & AI Health Assistant
 
-A modern healthcare demo application built with Flutter (Android/Web) and Node.js, featuring AI-powered health assistance, doctor discovery, and appointment management.
+A modern healthcare demo built with Flutter (Android/Web) and Node.js, featuring an AI assistant, professional day-focused dashboard, analytics with exports, and cloud-first connectivity.
 
 ---
 
@@ -30,6 +30,27 @@ CareVibe is a demo application that allows patients to:
 - **Database:** MongoDB
 - **Authentication:** Firebase
 - **AI Chat:** Groq API
+
+---
+
+## ✨ Key Features
+
+- AI Assistant (Groq) with natural-language date parsing, intent detection, and adaptive, plain‑text responses
+- Shared demo data via `DEMO_UID` so every login sees the same dataset (or point to your own Atlas data)
+- Demo authentication bypass (`POST /auth/demo`) for quick testing without Firebase
+- Day-focused Home: Health Score, contextual weather tips, medication reminders, and Today vs Yesterday comparisons
+- Analytics with date range picker, reset, and PDF/CSV export (includes AI summary)
+- Cloud-first API base for devices/emulators; web debug uses localhost automatically
+- Startup connection checks (MongoDB, Groq, Firebase) logged on backend boot
+
+## 🏗️ Architecture
+
+- Flutter app → REST API (JWT)
+- Backend verifies Firebase tokens (or demo auth), queries MongoDB Atlas
+- AI pipeline uses templates + policy to ensure accurate numbers and concise tone
+- API base selection in `frontend/lib/services/api.dart`:
+  - Web (debug): `http://localhost:5000`
+  - Non-web (devices/emulators): `https://carevibe-backend.onrender.com` (override with `--dart-define=API_BASE=`)
 
 ---
 
@@ -377,6 +398,26 @@ Want the app to run on a real phone without your laptop on? Deploy the backend t
 
 ---
 
+## 🔑 Environment Variables
+
+Backend `.env` (use `backend/env.example` as a template):
+
+```
+MONGO_URI=mongodb+srv://<user>:<pass>@cluster..../patient_ai_demo
+DEMO_UID=demo-shared
+JWT_SECRET=<random-strong-string>
+AES_KEY=<32-characters>
+GROQ_API_KEY=<your-groq-api-key>
+FIREBASE_SERVICE_ACCOUNT={"type":"service_account",...}  # preferred in cloud
+# or
+GOOGLE_APPLICATION_CREDENTIALS=/etc/secrets/firebase-admin-key.json
+PORT=5000
+```
+
+Frontend API base is auto-selected in `frontend/lib/services/api.dart` (see Architecture above).
+
+---
+
 ## 🔧 Troubleshooting
 
 ### Backend Issues
@@ -447,27 +488,34 @@ CareVibe/
 │   │   ├── routes/         # API routes
 │   │   ├── middleware/     # Auth middleware
 │   │   └── server.js       # Main server file
-│   ├── scripts/            # Utility scripts
-│   ├── .env               # Environment variables (create this!)
-│   ├── package.json       # Node.js dependencies
-│   └── README.md          # Backend-specific docs
+│   ├── scripts/            # Utility scripts (Groq/Mongo tests, validators)
+│   ├── env.example         # Environment template
+│   ├── package.json        # Node.js dependencies
+│   └── README.md           # Backend-specific docs
 │
-├── frontend/               # Flutter mobile app
+├── frontend/               # Flutter app
 │   ├── lib/
-│   │   ├── screens/       # App screens (Login, Home, Chat, etc.)
+│   │   ├── screens/       # Login, Home, AI Assistant, Dashboard, Analytics, Doctors
 │   │   ├── widgets/       # Reusable UI components
-│   │   ├── providers/     # State management
-│   │   ├── services/      # API client
+│   │   ├── providers/     # Auth/session/theme
+│   │   ├── services/      # API client, metrics, medications
 │   │   └── main.dart      # App entry point
-│   ├── android/
-│   │   └── app/
-│   │       └── google-services.json  # Firebase config (add this!)
+│   ├── android/app/google-services.json  # Firebase config (add this)
 │   ├── pubspec.yaml       # Flutter dependencies
 │   └── README.md          # Frontend-specific docs
 │
-├── REQUIREMENTS.txt       # Software & account requirements
-├── README.md              # This file!
-└── .gitignore            # Files to ignore in Git
+├── docs/                  # Dev docs (design, cloud, stories)
+│   ├── DEMO_SETUP.md
+│   ├── PROJECT_STORY.md
+│   ├── CHAT_IMPROVEMENTS_SUMMARY.md
+│   └── cloud_dotty.md
+│
+├── project_document/
+│   └── PROJECT_DOCUMENTATION.md  # Formal, end-to-end documentation
+│
+├── REQUIREMENTS.txt
+├── README.md
+└── .gitignore
 ```
 
 ---
@@ -512,28 +560,27 @@ Before running the app, make sure:
 
 ---
 
-## 🆘 Need Help?
+## 📚 Documentation References
 
-If you're stuck:
-1. Check the **Troubleshooting** section above
-2. Check backend console logs for errors
-3. Check Flutter console output for errors
-4. Verify all environment variables are set correctly
-5. Make sure MongoDB, backend server, and frontend are all running
+- `docs/DEMO_SETUP.md` — Shared demo data, Atlas integration, and testing
+- `docs/PROJECT_STORY.md` — Development journey and key milestones
+- `docs/CHAT_IMPROVEMENTS_SUMMARY.md` — AI upgrades (intents, dates, policy)
+- `docs/cloud_dotty.md` — Cloud behaviors and redeploy notes
+- `project_document/PROJECT_DOCUMENTATION.md` — Formal, end-to-end documentation
 
 ---
 
-## 📝 Notes
+## 🆘 Need Help?
 
-- The backend must be running **before** you start the frontend app
-- For local Android emulator tests, the backend URL defaults to `10.0.2.2:5000`
-- For local web tests, the backend URL defaults to `localhost:5000`
-- For production, update `api.dart` to your Render URL (e.g. `https://carevibe-backend.onrender.com`)
-- Always keep the backend server running while using the app (or ensure your Render service is awake)
-- The first time you run Flutter, it may take several minutes to compile
+If you're stuck:
+1. Check Troubleshooting above
+2. Inspect backend logs (look for connection status lines)
+3. Verify environment variables in Render or `.env`
+4. Confirm Atlas Network Access is active
+5. Ensure Flutter and Android SDK setups are complete (`flutter doctor`)
 
 ---
 
 **Happy Coding! 🚀**
 
-If you successfully ran the app, congratulations! You've set up a full-stack application with authentication, AI integration, and a modern mobile interface.
+CareVibe is demo-ready and cloud-first: quick onboarding, consistent data, and an AI assistant that understands your metrics.

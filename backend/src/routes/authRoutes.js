@@ -1,7 +1,8 @@
 const router = require('express').Router();
-const { verifyFirebaseAndIssueJwt } = require('../controllers/authController');
+const { verifyFirebaseAndIssueJwt, demoAuth } = require('../controllers/authController');
 
 router.post('/firebase', verifyFirebaseAndIssueJwt);
+router.post('/demo', demoAuth);
 
 module.exports = router;
 

@@ -57,6 +57,41 @@ class AuthProvider {
     sessionProvider.updateSession(backendToken: token, firebaseUser: firebaseUser);
   }
 
+  /// Demo sign-in - completely bypasses Firebase, uses backend only
+  /// This doesn't require any Firebase authentication providers
+  Future<void> signInWithDemo() async {
+    const demoEmail = 'yadukrishnagirikg@gmail.com';
+    const demoPassword = '123456789';
+
+    // Call backend demo auth endpoint (no Firebase required)
+    final r = await http.post(
+      Uri.parse('$apiBase/auth/demo'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({
+        'email': demoEmail,
+        'password': demoPassword,
+      }),
+    );
+
+    if (r.statusCode != 200) {
+      throw Exception('Demo auth failed: ${r.body}');
+    }
+
+    final response = jsonDecode(r.body) as Map<String, dynamic>;
+    final token = response['token'] as String?;
+    if (token == null || token.isEmpty) {
+      throw Exception('Demo auth failed: backend did not return a token');
+    }
+
+    final userData = response['user'] as Map<String, dynamic>?;
+    if (userData == null) {
+      throw Exception('Demo auth failed: user data not returned');
+    }
+
+    // Use demo session update (no Firebase User required)
+    sessionProvider.updateDemoSession(backendToken: token, userInfo: userData);
+  }
+
   Future<void> signOut() async {
     await FirebaseAuth.instance.signOut();
     if (!kIsWeb) {

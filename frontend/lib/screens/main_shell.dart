@@ -56,7 +56,7 @@ class MainShell extends StatelessWidget {
             BottomNavigationBarItem(icon: Icon(Icons.home_rounded), label: 'Home'),
             BottomNavigationBarItem(icon: Icon(Icons.dashboard_rounded), label: 'Dashboard'),
             BottomNavigationBarItem(icon: Icon(Icons.medical_services_rounded), label: 'Doctors'),
-            BottomNavigationBarItem(icon: Icon(Icons.chat_bubble_rounded), label: 'Chat'),
+            BottomNavigationBarItem(icon: Icon(Icons.chat_bubble_rounded), label: 'AI Assistant'),
             BottomNavigationBarItem(icon: Icon(Icons.insights_rounded), label: 'Analytics'),
           ],
         ),
