@@ -1,7 +1,7 @@
 const UserProfile = require('../models/UserProfile');
 
 // Shared profile UID can be configured via environment
-const DEMO_UID = process.env.DEMO_UID || 'demo-shared';
+const DEMO_UID = process.env.DEMO_UID ?? 'demo-shared';
 const SHOULD_SEED_DEMO_PROFILE = DEMO_UID === 'demo-shared';
 
 // Auto-seed demo profile if it doesn't exist
@@ -10,7 +10,7 @@ async function ensureDemoProfile() {
   const profile = await UserProfile.findOne({ uid: DEMO_UID });
   if (profile) return; // Demo profile already exists
 
-  console.log('Auto-seeding demo profile for shared UID:', DEMO_UID);
+  console.log('Auto-seeding demo profile...');
   await UserProfile.create({
     uid: DEMO_UID,
     age: 28,

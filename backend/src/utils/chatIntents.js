@@ -131,8 +131,8 @@ function extractMetric(text) {
 
 // Extract date from user message (YYYY-MM-DD format)
 function extractDate(text) {
-  // ISO date format: 2025-10-26
-  const isoMatch = text.match(/\b(\d{4})-(\d{2})-(\d{2})\b/);
+  // ISO date format: 2025-10-26 (using more specific pattern to prevent ReDoS)
+  const isoMatch = text.match(/\b[12]\d{3}-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])\b/);
   if (isoMatch) {
     return isoMatch[0];
   }
@@ -151,10 +151,11 @@ function extractDate(text) {
     return today.toISOString().split('T')[0];
   }
 
-  // "N days ago"
-  const daysAgoMatch = lower.match(/(\d+)\s*days?\s*ago/);
+  // "N days ago" (with bounded number to prevent ReDoS)
+  const daysAgoMatch = lower.match(/([1-9][0-9]{0,2})\s*days?\s*ago/);
   if (daysAgoMatch) {
     const n = parseInt(daysAgoMatch[1], 10);
+    if (n > 365) return null; // Prevent unreasonable date calculations
     const target = new Date(today);
     target.setDate(target.getDate() - n);
     return target.toISOString().split('T')[0];
@@ -263,7 +264,7 @@ function isGreeting(message) {
   const lower = message.toLowerCase().trim();
   
   // Check if entire message is just a greeting (allow punctuation)
-  const cleanMessage = lower.replace(/[!?.]/g, '').trim();
+  const cleanMessage = lower.replace(/[!?\.]/g, '').trim();
   if (GREETING_KEYWORDS.includes(cleanMessage)) return true;
   
   // Check if message starts with greeting and is short (< 20 chars)
