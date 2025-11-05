@@ -1,0 +1,26 @@
+name: "Custom CodeQL Config"
+
+queries:
+  - uses: security-and-quality
+  - uses: security-extended
+
+paths:
+  - src
+  - controllers
+  - models
+  - routes
+  - services
+  - utils
+
+paths-ignore:
+  - node_modules
+  - '**/*.test.js'
+  - '**/*.spec.js'
+  - scripts
+  - '**/test/**'
+
+query-filters:
+  - exclude:
+      problem.severity:
+        - warning
+        - recommendation

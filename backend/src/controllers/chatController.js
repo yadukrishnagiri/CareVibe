@@ -15,6 +15,13 @@ const advancedConsent = new Map();
 // Key: user uid, Value: { lastIntent, lastMetric, lastDate, lastGoal, lastSymptom, timestamp }
 const sessionContext = new Map();
 
+function redactApiKey(text) {
+  if (!text || !process.env.GROQ_API_KEY) return text;
+  const apiKey = process.env.GROQ_API_KEY;
+  // Replace API key with a redacted placeholder
+  return text.replace(new RegExp(apiKey, 'g'), '[REDACTED_API_KEY]');
+}
+
 const DEFAULT_SHARED_UID = process.env.DEMO_UID || 'demo-shared';
 let cachedSharedUid;
 
@@ -773,7 +780,7 @@ Key takeaway: Small, consistent changes in diet and activity lead to sustainable
       lastError = err;
       const status = err.response?.status;
       const message = err.response?.data?.error?.message || err.message || 'Unknown Groq error';
-      console.error(`[chatWithAI] Groq error for model ${model}:`, status, message);
+      console.error(`[chatWithAI] Groq error for model ${model}:`, status, redactApiKey(message));
 
       const shouldRetry =
         status === 429 ||

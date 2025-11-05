@@ -22,7 +22,7 @@ function classifyWithHeuristics(message) {
     /^when (did|was|is)/,
     /^where/,
     /^who/,
-    /latest|current|today|yesterday/,
+    /\b(latest|current|today|yesterday)\b/,
     /^(bmi|weight|sleep|steps|heart rate|stress)/,
   ];
   
@@ -58,8 +58,8 @@ function classifyWithHeuristics(message) {
     /trend|pattern|change/,
     /increasing|decreasing|rising|falling/,
     /compare|comparison/,
-    /\d+\s*(day|week|month|year)/,
-    /last\s+\d+/,
+    /[1-9][0-9]{0,2}\s*(day|week|month|year)/, // Bounded number to prevent ReDoS
+    /last\s+[1-9][0-9]{0,2}/, // Bounded number to prevent ReDoS
   ];
   
   for (const pattern of dataPatterns) {

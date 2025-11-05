@@ -1,7 +1,7 @@
 const HealthMetric = require('../models/HealthMetric');
 
 // Shared data UID can be configured through environment (defaults to demo)
-const DEMO_UID = process.env.DEMO_UID || 'demo-shared';
+const DEMO_UID = process.env.DEMO_UID ?? 'demo-shared';
 const SHOULD_SEED_DEMO_DATA = DEMO_UID === 'demo-shared';
 
 // Auto-seed demo data if it doesn't exist
@@ -10,7 +10,7 @@ async function ensureDemoData() {
   const count = await HealthMetric.countDocuments({ userUid: DEMO_UID });
   if (count > 0) return; // Demo data already exists
 
-  console.log('Auto-seeding demo data for shared UID:', DEMO_UID);
+  console.log('Auto-seeding demo data...');
   const docs = [];
   const base = new Date();
   for (let i = 0; i < 30; i++) {

@@ -116,3 +116,21 @@ lerna-debug.log*
 
 # Documentation
 docs/
+!docs/README.md
+!docs/CONTRIBUTING.md
+
+# CodeQL
+.fresh-db/
+*-db/
+backend-db/
+*.sarif
+.codeql/
+.cache/
+codeql-database.yml
+db-javascript/
+db-*/
+log/
+results/
+diagnostic/
+# Keep CodeQL configuration
+!codeql-config.yml
