@@ -20,7 +20,7 @@ async function main() {
   console.log('✅ Connected');
 
   const demoUid = process.env.DEMO_UID || 'demo-shared';
-  console.log('\n📊 Testing queries with UID:', demoUid);
+  console.log('\n📊 Testing queries with UID: [redacted]');
 
   // Test 1: Count all documents for this UID
   const count = await HealthMetric.countDocuments({ userUid: demoUid });

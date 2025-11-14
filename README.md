@@ -261,9 +261,36 @@ Or download the ZIP file and extract it to a folder called `CareVibe`.
 
 ---
 
-### Step 5: Set Up Frontend (Flutter)
+### Step 5: Set Up Weather API (Optional but Recommended)
 
-#### 5.1 Install Flutter Dependencies
+1. **Copy weather service template:**
+   ```powershell
+   cd frontend\lib\services
+   copy weather_service.template.dart weather_service.dart
+   ```
+
+2. **Get OpenWeatherMap API key:**
+   - Go to: https://openweathermap.org/
+   - Sign up for free account
+   - Go to "My API Keys" section
+   - Copy your API key
+
+3. **Add API key to weather service:**
+   - Open `frontend\lib\services\weather_service.dart`
+   - Find line 20: `static const String _apiKey = 'YOUR_API_KEY_HERE';`
+   - Replace with your actual key
+   - Save the file
+
+4. **Wait for activation:**
+   - API keys take 10-15 minutes to activate
+
+**Note:** The actual `weather_service.dart` is in `.gitignore` for security. See `frontend/lib/services/WEATHER_SETUP.md` for details.
+
+---
+
+### Step 6: Set Up Frontend (Flutter)
+
+#### 6.1 Install Flutter Dependencies
 1. Open a **NEW** PowerShell window (keep backend running!)
 2. Navigate to the frontend folder:
    ```powershell
@@ -275,12 +302,12 @@ Or download the ZIP file and extract it to a folder called `CareVibe`.
    ```
    Wait for it to finish.
 
-#### 5.2 Add Firebase Configuration File
+#### 6.2 Add Firebase Configuration File
 1. Copy the `google-services.json` file you downloaded from Firebase
 2. Paste it into: `frontend\android\app\google-services.json`
 3. Make sure the file path is exactly: `frontend\android\app\google-services.json`
 
-#### 5.3 Configure Firebase for Flutter (Web Support)
+#### 6.3 Configure Firebase for Flutter (Web Support)
 1. Make sure you have FlutterFire CLI installed:
    ```powershell
    dart pub global activate flutterfire_cli
@@ -298,7 +325,7 @@ Or download the ZIP file and extract it to a folder called `CareVibe`.
    - Select platforms: `android`, `web`
    - This will generate `lib/firebase_options.dart` automatically
 
-#### 5.4 Verify Flutter Setup
+#### 6.4 Verify Flutter Setup
 1. Run Flutter doctor to check everything:
    ```powershell
    flutter doctor
@@ -307,7 +334,7 @@ Or download the ZIP file and extract it to a folder called `CareVibe`.
 
 ---
 
-### Step 6: Run the Application
+### Step 7: Run the Application
 
 #### Option A: Run on Web (Easier for Beginners)
 
@@ -347,11 +374,11 @@ Or download the ZIP file and extract it to a folder called `CareVibe`.
 
 ---
 
-### Step 7: Deploy to the Cloud & Build the APK
+### Step 8: Deploy to the Cloud & Build the APK
 
 Want the app to run on a real phone without your laptop on? Deploy the backend to Render (free tier) and point the Flutter app to that URL.
 
-#### 7.1 Deploy backend to Render.com
+#### 8.1 Deploy backend to Render.com
 1. Sign up at [render.com](https://render.com) with your GitHub account.
 2. Click **New → Web Service** and choose the `yadukrishnagiri/CareVibe` repository.
 3. Use these settings:
@@ -366,12 +393,12 @@ Want the app to run on a real phone without your laptop on? Deploy the backend t
 5. In **Secret Files**, create `firebase-admin-key.json` and paste your Firebase Admin SDK JSON.
 6. Click **Deploy web service**.
 
-#### 7.2 Whitelist Render in MongoDB Atlas
+#### 8.2 Whitelist Render in MongoDB Atlas
 1. In MongoDB Atlas go to **Security → Network Access**.
 2. Add IP `0.0.0.0/0` (allow all) or the specific Render IPs.
 3. Wait until the status shows **Active** and redeploy if needed.
 
-#### 7.3 Update Flutter to use the cloud API
+#### 8.3 Update Flutter to use the cloud API
 1. Open `frontend/lib/services/api.dart`.
 2. Replace the `apiBase` value with your Render URL, e.g.
    ```dart
@@ -379,7 +406,7 @@ Want the app to run on a real phone without your laptop on? Deploy the backend t
    ```
 3. (Optional) commit and push the change to GitHub so future deploys use it.
 
-#### 7.4 Build the release APK
+#### 8.4 Build the release APK
 1. In PowerShell:
    ```powershell
    cd C:\Users\yaduk\OneDrive\Documents\GitHub\CareVibe\frontend
@@ -389,7 +416,7 @@ Want the app to run on a real phone without your laptop on? Deploy the backend t
    ```
 2. APK output: `frontend\build\app\outputs\flutter-apk\app-release.apk`
 
-#### 7.5 Install on a real device
+#### 8.5 Install on a real device
 - Copy the APK to your phone and open it, or run:
   ```powershell
   adb install frontend\build\app\outputs\flutter-apk\app-release.apk

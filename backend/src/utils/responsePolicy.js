@@ -14,6 +14,7 @@ function classifyWithHeuristics(message) {
   if (!message || typeof message !== 'string') return 'general';
   
   const lower = message.toLowerCase();
+  const lowerLimited = lower.slice(0, 500);
   
   // Simple info queries (short factual questions)
   const simplePatterns = [
@@ -27,9 +28,9 @@ function classifyWithHeuristics(message) {
   ];
   
   for (const pattern of simplePatterns) {
-    if (pattern.test(lower)) {
+    if (pattern.test(lowerLimited)) {
       // If contains numbers/dates/metric names, likely data question
-      if (/\d{1,4}|ago|last|past|average|trend/.test(lower)) {
+      if (/\d{1,4}|ago|last|past|average|trend/.test(lowerLimited)) {
         return 'data_question';
       }
       return 'simple_info';
@@ -58,12 +59,12 @@ function classifyWithHeuristics(message) {
     /trend|pattern|change/,
     /increasing|decreasing|rising|falling/,
     /compare|comparison/,
-    /\d+\s*(day|week|month|year)/,
-    /last\s+\d+/,
+    /\d{1,4}\s*(day|week|month|year)/,
+    /last\s+\d{1,4}/,
   ];
   
   for (const pattern of dataPatterns) {
-    if (pattern.test(lower)) {
+    if (pattern.test(lowerLimited)) {
       return 'data_question';
     }
   }

@@ -486,7 +486,7 @@ exports.chatWithAI = async (req, res) => {
   }
   
   // Detect specific data intents before building general context (pass context for follow-ups)
-  const intent = detectIntent(trimmedMessage, context);
+  const intent = await detectIntent(trimmedMessage, context);
   let intentResult = null;
   
   // Update session context with new intent
@@ -497,7 +497,7 @@ exports.chatWithAI = async (req, res) => {
 
   if (intent) {
     console.log('[chatWithAI] Detected intent:', intent.type, 'for metric:', intent.metric);
-    console.log('[chatWithAI] Using shared UID:', sharedUid);
+    console.log('[chatWithAI] Using shared UID: [redacted]');
     console.log('[chatWithAI] Intent details:', JSON.stringify(intent));
     try {
       switch (intent.type) {

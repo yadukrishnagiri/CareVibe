@@ -28,6 +28,7 @@ app.use('/', require('./routes/appointmentRoutes'));
 app.use('/', require('./routes/healthRoutes'));
 app.use('/', require('./routes/medicationRoutes'));
 app.use('/profile', require('./routes/profileRoutes'));
+app.use('/api', require('./routes/weatherRoutes'));
 
 const PORT = process.env.PORT || 5000;
 

@@ -114,5 +114,15 @@ lerna-debug.log*
 *.seed
 *.pid.lock
 
-# Documentation
+# Documentation & Test Files
 docs/
+WEATHER_*.md
+TEST_*.md
+
+# CodeQL & Security Scanning
+*.sarif
+*-db/
+.codeql/
+
+# Templates (if containing sensitive data)
+backend/templates/

@@ -61,5 +61,51 @@ class MedicationApi {
     
     return jsonDecode(response.body) as List<dynamic>;
   }
+
+  static Future<Map<String, dynamic>> createMedication(
+    String jwt, {
+    required String name,
+    required String dosage,
+    required List<String> times,
+    required DateTime startDate,
+    DateTime? endDate,
+    String? notes,
+  }) async {
+    final url = '$apiBase/medications';
+    
+    final body = {
+      'name': name,
+      'dosage': dosage,
+      'times': times,
+      'startDate': startDate.toIso8601String(),
+      if (endDate != null) 'endDate': endDate.toIso8601String(),
+      if (notes != null && notes.isNotEmpty) 'notes': notes,
+    };
+    
+    final response = await http.post(
+      Uri.parse(url),
+      headers: authHeaders(jwt),
+      body: jsonEncode(body),
+    );
+    
+    if (response.statusCode != 201) {
+      throw Exception('Failed to create medication (${response.statusCode})');
+    }
+    
+    return jsonDecode(response.body) as Map<String, dynamic>;
+  }
+
+  static Future<void> deleteMedication(String jwt, String medicationId) async {
+    final url = '$apiBase/medications/$medicationId';
+    
+    final response = await http.delete(
+      Uri.parse(url),
+      headers: authHeaders(jwt),
+    );
+    
+    if (response.statusCode != 200 && response.statusCode != 204) {
+      throw Exception('Failed to delete medication (${response.statusCode})');
+    }
+  }
 }
 

@@ -10,7 +10,7 @@ async function ensureDemoData() {
   const count = await HealthMetric.countDocuments({ userUid: DEMO_UID });
   if (count > 0) return; // Demo data already exists
 
-  console.log('Auto-seeding demo data for shared UID:', DEMO_UID);
+  console.log('Auto-seeding demo data for shared UID: [redacted]');
   const docs = [];
   const base = new Date();
   for (let i = 0; i < 30; i++) {

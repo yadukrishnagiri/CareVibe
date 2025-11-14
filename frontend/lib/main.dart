@@ -12,6 +12,8 @@ import 'screens/profile_setup_screen.dart';
 import 'providers/theme_provider.dart';
 import 'screens/login_screen.dart';
 import 'screens/main_shell.dart';
+import 'screens/medications_screen.dart';
+import 'services/notification_service.dart';
 import 'theme/app_theme.dart';
 
 void main() async {
@@ -19,6 +21,14 @@ void main() async {
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
+  
+  // Initialize notification service
+  try {
+    await NotificationService().initialize();
+  } catch (e) {
+    // Notification service initialization failed, continue anyway
+  }
+  
   runApp(
     MultiProvider(
       providers: [
@@ -53,6 +63,7 @@ class CareVibeApp extends StatelessWidget {
         '/login': (_) => const LoginScreen(),
         '/shell': (_) => const MainShell(),
         '/profile-setup': (_) => const ProfileSetupScreen(),
+        '/medications': (_) => const MedicationsScreen(),
       },
     );
   }

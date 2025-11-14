@@ -135,3 +135,24 @@ exports.addMedication = async (req, res) => {
   }
 };
 
+// Delete medication
+exports.deleteMedication = async (req, res) => {
+  try {
+    const uid = req.user?.uid;
+    if (!uid) return res.status(401).json({ error: 'Unauthorized' });
+
+    const { id } = req.params;
+    
+    const medication = await Medication.findOne({ _id: id, userUid: DEMO_UID });
+    
+    if (!medication) {
+      return res.status(404).json({ error: 'Medication not found' });
+    }
+
+    await Medication.deleteOne({ _id: id });
+    res.status(200).json({ message: 'Medication deleted successfully' });
+  } catch (e) {
+    res.status(500).json({ error: 'Failed to delete medication', details: e.message });
+  }
+};
+

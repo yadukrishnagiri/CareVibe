@@ -127,7 +127,7 @@ async function computeDerivedMetrics() {
   const avgSleep = sleep.length ? (sleep.reduce((a, b) => a + b, 0) / sleep.length).toFixed(1) : 'N/A';
   const avgStress = stress.length ? (stress.reduce((a, b) => a + b, 0) / stress.length).toFixed(0) : 'N/A';
   
-  console.log(`7-day rolling averages for ${demoUid}:`);
+  console.log('7-day rolling averages for [redacted UID]:');
   console.log(`  Steps: ${avgSteps} steps/day`);
   console.log(`  Sleep: ${avgSleep} hours/night`);
   console.log(`  Stress: ${avgStress}/100`);

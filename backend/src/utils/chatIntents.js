@@ -139,20 +139,21 @@ function extractDate(text) {
 
   // Relative dates
   const lower = text.toLowerCase();
+  const limited = lower.slice(0, 500);
   const today = new Date();
 
-  if (lower.includes('yesterday')) {
+  if (limited.includes('yesterday')) {
     const yesterday = new Date(today);
     yesterday.setDate(yesterday.getDate() - 1);
     return yesterday.toISOString().split('T')[0];
   }
 
-  if (lower.includes('today')) {
+  if (limited.includes('today')) {
     return today.toISOString().split('T')[0];
   }
 
   // "N days ago"
-  const daysAgoMatch = lower.match(/(\d+)\s*days?\s*ago/);
+  const daysAgoMatch = limited.match(/(\d{1,4})\s*days?\s*ago/);
   if (daysAgoMatch) {
     const n = parseInt(daysAgoMatch[1], 10);
     const target = new Date(today);
@@ -161,7 +162,7 @@ function extractDate(text) {
   }
 
   // "last week", "last month" - approximate
-  if (lower.includes('last week')) {
+  if (limited.includes('last week')) {
     const target = new Date(today);
     target.setDate(target.getDate() - 7);
     return target.toISOString().split('T')[0];
@@ -173,23 +174,24 @@ function extractDate(text) {
 // Extract number of days for averages/trends
 function extractDays(text) {
   const lower = text.toLowerCase();
+  const limited = lower.slice(0, 500);
 
   // "last N days"
-  const lastDaysMatch = lower.match(/last\s+(\d+)\s+days?/);
+  const lastDaysMatch = limited.match(/last\s+(\d{1,4})\s+days?/);
   if (lastDaysMatch) return parseInt(lastDaysMatch[1], 10);
 
   // "past N days"
-  const pastDaysMatch = lower.match(/past\s+(\d+)\s+days?/);
+  const pastDaysMatch = limited.match(/past\s+(\d{1,4})\s+days?/);
   if (pastDaysMatch) return parseInt(pastDaysMatch[1], 10);
 
   // "N day average"
-  const avgMatch = lower.match(/(\d+)\s*day\s*average/);
+  const avgMatch = limited.match(/(\d{1,4})\s*day\s*average/);
   if (avgMatch) return parseInt(avgMatch[1], 10);
 
   // Common shortcuts
-  if (lower.includes('last week') || lower.includes('past week')) return 7;
-  if (lower.includes('last month') || lower.includes('past month')) return 30;
-  if (lower.includes('last 2 weeks')) return 14;
+  if (limited.includes('last week') || limited.includes('past week')) return 7;
+  if (limited.includes('last month') || limited.includes('past month')) return 30;
+  if (limited.includes('last 2 weeks')) return 14;
 
   return null;
 }

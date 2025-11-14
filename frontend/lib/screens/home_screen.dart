@@ -1,8 +1,8 @@
 import 'dart:convert';
-import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:http/http.dart' as http;
 import 'package:provider/provider.dart';
 
@@ -13,6 +13,7 @@ import '../providers/theme_provider.dart';
 import '../services/api.dart';
 import '../services/metrics_api.dart';
 import '../services/medication_api.dart';
+import '../services/weather_service.dart';
 import '../utils/health_analytics.dart';
 import '../theme/app_theme.dart';
 
@@ -759,15 +760,261 @@ class _HealthScoreCard extends StatelessWidget {
 }
 
 // Weather Card
-class _WeatherCard extends StatelessWidget {
+class _WeatherCard extends StatefulWidget {
   const _WeatherCard();
 
   @override
+  State<_WeatherCard> createState() => _WeatherCardState();
+}
+
+class _WeatherCardState extends State<_WeatherCard> {
+  WeatherData? _weatherData;
+  bool _isLoading = true;
+  String _error = '';
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchWeather();
+  }
+
+  Future<void> _fetchWeather() async {
+    setState(() {
+      _isLoading = true;
+      _error = '';
+    });
+
+    try {
+      print('[HomeScreen] Starting weather fetch...');
+      final weatherService = WeatherService();
+      WeatherData? weatherData;
+      
+      // Try to get user's location first
+      try {
+        print('[HomeScreen] Attempting to get user location...');
+        final position = await _getUserLocation();
+        if (position != null) {
+          print('[HomeScreen] Location obtained: ${position.latitude}, ${position.longitude}');
+          weatherData = await weatherService.getWeatherByCoordinates(
+            position.latitude,
+            position.longitude,
+          );
+        } else {
+          print('[HomeScreen] Location not available, will use default city');
+        }
+      } catch (e) {
+        print('[HomeScreen] Location error: $e');
+        // Location failed, will use default city
+      }
+
+      // If location-based weather failed, use default city
+      if (weatherData == null) {
+        print('[HomeScreen] Fetching weather for default city: London');
+        weatherData = await weatherService.getWeatherByCity('London');
+      }
+
+      if (weatherData != null) {
+        print('[HomeScreen] Weather data fetched successfully!');
+        setState(() {
+          _weatherData = weatherData;
+          _isLoading = false;
+        });
+      } else {
+        print('[HomeScreen] Failed to fetch weather data');
+        setState(() {
+          _error = 'Unable to fetch weather data';
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      print('[HomeScreen] Exception in _fetchWeather: $e');
+      setState(() {
+        _error = 'Error loading weather: $e';
+        _isLoading = false;
+      });
+    }
+  }
+
+  Future<Position?> _getUserLocation() async {
+    try {
+      // Check if location services are enabled
+      bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+      if (!serviceEnabled) {
+        return null;
+      }
+
+      // Check location permissions
+      LocationPermission permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+        if (permission == LocationPermission.denied) {
+          return null;
+        }
+      }
+
+      if (permission == LocationPermission.deniedForever) {
+        return null;
+      }
+
+      // Get current position
+      final position = await Geolocator.getCurrentPosition(
+        desiredAccuracy: LocationAccuracy.low,
+      );
+      return position;
+    } catch (e) {
+      print('Error getting location: $e');
+      return null;
+    }
+  }
+
+  IconData _getWeatherIcon(String condition) {
+    switch (condition.toLowerCase()) {
+      case 'clear':
+        return Icons.wb_sunny_rounded;
+      case 'clouds':
+        return Icons.cloud_rounded;
+      case 'rain':
+      case 'drizzle':
+        return Icons.water_drop_rounded;
+      case 'thunderstorm':
+        return Icons.flash_on_rounded;
+      case 'snow':
+        return Icons.ac_unit_rounded;
+      case 'mist':
+      case 'fog':
+      case 'haze':
+        return Icons.cloud_queue_rounded;
+      default:
+        return Icons.wb_cloudy_rounded;
+    }
+  }
+
+  Color _getAqiColor(int? aqiLevel) {
+    if (aqiLevel == null) return Colors.white.withOpacity(0.3);
+    
+    switch (aqiLevel) {
+      case 1:
+        return Colors.green;
+      case 2:
+        return Colors.lightGreen;
+      case 3:
+        return Colors.orange;
+      case 4:
+        return Colors.red;
+      case 5:
+        return Colors.purple;
+      default:
+        return Colors.white.withOpacity(0.3);
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
-    // For now, using demo data. Can be replaced with actual weather API later
-    final temp = 22; // Demo temperature
-    final condition = 'Sunny';
-    final tip = 'Perfect weather for a walk! Aim for 30 minutes of outdoor activity today.';
+    if (_isLoading) {
+      return Container(
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          gradient: const LinearGradient(
+            colors: [Color(0xFF60A5FA), Color(0xFF3B82F6)],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+          borderRadius: BorderRadius.circular(24),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.blue.withOpacity(0.3),
+              blurRadius: 20,
+              offset: const Offset(0, 8),
+            ),
+          ],
+        ),
+        child: const Center(
+          child: CircularProgressIndicator(
+            color: Colors.white,
+          ),
+        ),
+      );
+    }
+
+    if (_error.isNotEmpty || _weatherData == null) {
+      // Fallback to demo data if there's an error
+      final temp = 22;
+      final condition = 'Sunny';
+      final tip = 'Perfect weather for a walk! Aim for 30 minutes of outdoor activity today.';
+
+      return Container(
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          gradient: const LinearGradient(
+            colors: [Color(0xFF60A5FA), Color(0xFF3B82F6)],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+          borderRadius: BorderRadius.circular(24),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.blue.withOpacity(0.3),
+              blurRadius: 20,
+              offset: const Offset(0, 8),
+            ),
+          ],
+        ),
+        child: Column(
+          children: [
+            Row(
+              children: [
+                const Icon(Icons.wb_sunny_rounded, color: Colors.white, size: 48),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        '$temp°C',
+                        style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                            ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        condition,
+                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                              color: Colors.white.withOpacity(0.9),
+                            ),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        tip,
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                              color: Colors.white.withOpacity(0.85),
+                            ),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Text(
+              '(Demo data - $_error)',
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: Colors.white.withOpacity(0.6),
+                    fontSize: 10,
+                  ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    final weather = _weatherData!;
+    final temp = weather.temperature.round();
+    final condition = weather.condition;
+    final tip = weather.getHealthTip();
+    final aqi = weather.aqi;
 
     return Container(
       padding: const EdgeInsets.all(20),
@@ -786,40 +1033,88 @@ class _WeatherCard extends StatelessWidget {
           ),
         ],
       ),
-      child: Row(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Icon(Icons.wb_sunny_rounded, color: Colors.white, size: 48),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  '$temp°C',
-                  style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
-                      ),
+          Row(
+            children: [
+              Icon(
+                _getWeatherIcon(condition),
+                color: Colors.white,
+                size: 48,
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Text(
+                          '$temp°C',
+                          style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                              ),
+                        ),
+                        const SizedBox(width: 8),
+                        if (aqi != null)
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 4,
+                            ),
+                            decoration: BoxDecoration(
+                              color: _getAqiColor(aqi.level),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Text(
+                              'AQI: ${aqi.getLevelDescription()}',
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 10,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                      ],
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      condition,
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                            color: Colors.white.withOpacity(0.9),
+                          ),
+                    ),
+                  ],
                 ),
-                const SizedBox(height: 4),
-                Text(
-                  condition,
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        color: Colors.white.withOpacity(0.9),
-                      ),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  tip,
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: Colors.white.withOpacity(0.85),
-                      ),
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ],
-            ),
+              ),
+              IconButton(
+                icon: const Icon(Icons.refresh, color: Colors.white),
+                onPressed: _fetchWeather,
+                tooltip: 'Refresh weather',
+              ),
+            ],
           ),
+          const SizedBox(height: 12),
+          Text(
+            tip,
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: Colors.white.withOpacity(0.85),
+                ),
+            maxLines: 3,
+            overflow: TextOverflow.ellipsis,
+          ),
+          if (weather.cityName.isNotEmpty) ...[
+            const SizedBox(height: 8),
+            Text(
+              '📍 ${weather.cityName}',
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: Colors.white.withOpacity(0.7),
+                    fontSize: 11,
+                  ),
+            ),
+          ],
         ],
       ),
     );
@@ -1068,6 +1363,15 @@ class _MedicationRemindersCard extends StatelessWidget {
                 style: Theme.of(context).textTheme.titleMedium?.copyWith(
                       fontWeight: FontWeight.bold,
                     ),
+              ),
+              const Spacer(),
+              IconButton(
+                icon: const Icon(Icons.add_circle_outline, size: 24),
+                color: AppColors.primary,
+                onPressed: () {
+                  Navigator.pushNamed(context, '/medications');
+                },
+                tooltip: 'Add Medication',
               ),
             ],
           ),
