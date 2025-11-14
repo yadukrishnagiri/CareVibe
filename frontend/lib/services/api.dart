@@ -1,32 +1,22 @@
-import 'package:flutter/foundation.dart';
+import 'package:flutter/foundation.dart' show kIsWeb, kReleaseMode;
 
 // Choose API base by build mode and platform.
-// - Web debug: local backend
-// - Mobile debug: special IP for Android emulator, localhost for iOS
+// - Web debug: local backend (for easy local testing)
+// - All mobile / non-web platforms: cloud backend on Render
 // - Release builds: cloud backend
 const _forcedApiBase = String.fromEnvironment('API_BASE');
 
 String get apiBase {
+  // Allow overriding via --dart-define=API_BASE=...
   if (_forcedApiBase.isNotEmpty) return _forcedApiBase;
 
-  // In debug mode, prioritize local backend for all platforms
-  if (!kReleaseMode) {
-    if (kIsWeb) {
-      // Web debug uses localhost
-      return 'http://localhost:5000';
-    } else {
-      // This block is for mobile (non-web) builds.
-      if (defaultTargetPlatform == TargetPlatform.android) {
-        // Android emulators connect to host machine's localhost via 10.0.2.2
-        return 'http://10.0.2.2:5000';
-      } else {
-        // iOS simulators and other platforms can use localhost directly
-        return 'http://localhost:5000';
-      }
-    }
-  }
+  // Use cloud backend for all non-web platforms (physical devices & emulators)
+  if (!kIsWeb) return 'https://carevibe-backend.onrender.com';
 
-  // In release mode, always use the cloud backend
+  // Web debug uses localhost
+  if (!kReleaseMode) return 'http://localhost:5000';
+
+  // Web release uses cloud
   return 'https://carevibe-backend.onrender.com';
 }
 
