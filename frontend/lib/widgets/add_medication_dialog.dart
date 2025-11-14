@@ -5,6 +5,7 @@ import '../providers/session_provider.dart';
 import '../services/medication_api.dart';
 import '../services/notification_service.dart';
 import '../theme/app_theme.dart';
+import '../data/medication_database.dart';
 
 class AddMedicationDialog extends StatefulWidget {
   const AddMedicationDialog({super.key});
@@ -23,6 +24,8 @@ class _AddMedicationDialogState extends State<AddMedicationDialog> {
   DateTime _startDate = DateTime.now();
   DateTime? _endDate;
   bool _isSubmitting = false;
+  MedicationInfo? _selectedMedication;
+  List<String> _suggestedDosages = [];
 
   @override
   void dispose() {
@@ -220,22 +223,133 @@ class _AddMedicationDialogState extends State<AddMedicationDialog> {
                   ),
                   const SizedBox(height: 24),
                   
-                  // Medication Name
-                  TextFormField(
-                    controller: _nameController,
-                    decoration: InputDecoration(
-                      labelText: 'Medication Name',
-                      hintText: 'e.g., Aspirin, Vitamin D',
-                      prefixIcon: const Icon(Icons.medical_information_outlined),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                    ),
-                    validator: (value) {
-                      if (value == null || value.trim().isEmpty) {
-                        return 'Please enter medication name';
+                  // Medication Name with Autocomplete
+                  Autocomplete<MedicationInfo>(
+                    optionsBuilder: (TextEditingValue textEditingValue) {
+                      if (textEditingValue.text.isEmpty) {
+                        return const Iterable<MedicationInfo>.empty();
                       }
-                      return null;
+                      return MedicationDatabase.search(textEditingValue.text);
+                    },
+                    displayStringForOption: (MedicationInfo option) => option.name,
+                    onSelected: (MedicationInfo selection) {
+                      setState(() {
+                        _selectedMedication = selection;
+                        _suggestedDosages = selection.commonDosages;
+                        _nameController.text = selection.name;
+                      });
+                    },
+                    fieldViewBuilder: (
+                      BuildContext context,
+                      TextEditingController textEditingController,
+                      FocusNode focusNode,
+                      VoidCallback onFieldSubmitted,
+                    ) {
+                      // Sync our controller with the autocomplete controller
+                      if (_nameController.text.isNotEmpty && textEditingController.text.isEmpty) {
+                        textEditingController.text = _nameController.text;
+                      }
+                      
+                      return TextFormField(
+                        controller: textEditingController,
+                        focusNode: focusNode,
+                        decoration: InputDecoration(
+                          labelText: 'Medication Name',
+                          hintText: 'Start typing medication name...',
+                          prefixIcon: const Icon(Icons.medical_information_outlined),
+                          suffixIcon: textEditingController.text.isNotEmpty
+                              ? IconButton(
+                                  icon: const Icon(Icons.clear, size: 20),
+                                  onPressed: () {
+                                    textEditingController.clear();
+                                    _nameController.clear();
+                                    setState(() {
+                                      _selectedMedication = null;
+                                      _suggestedDosages = [];
+                                    });
+                                  },
+                                )
+                              : const Icon(Icons.search, size: 20),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          helperText: 'Search from ${MedicationDatabase.medications.length}+ medications',
+                          helperMaxLines: 1,
+                        ),
+                        onChanged: (value) {
+                          _nameController.text = value;
+                          if (value.isEmpty) {
+                            setState(() {
+                              _selectedMedication = null;
+                              _suggestedDosages = [];
+                            });
+                          }
+                        },
+                        validator: (value) {
+                          if (value == null || value.trim().isEmpty) {
+                            return 'Please enter medication name';
+                          }
+                          return null;
+                        },
+                      );
+                    },
+                    optionsViewBuilder: (
+                      BuildContext context,
+                      AutocompleteOnSelected<MedicationInfo> onSelected,
+                      Iterable<MedicationInfo> options,
+                    ) {
+                      return Align(
+                        alignment: Alignment.topLeft,
+                        child: Material(
+                          elevation: 4.0,
+                          borderRadius: BorderRadius.circular(12),
+                          child: ConstrainedBox(
+                            constraints: const BoxConstraints(maxHeight: 200, maxWidth: 400),
+                            child: ListView.builder(
+                              padding: const EdgeInsets.all(8.0),
+                              itemCount: options.length,
+                              shrinkWrap: true,
+                              itemBuilder: (BuildContext context, int index) {
+                                final MedicationInfo option = options.elementAt(index);
+                                return InkWell(
+                                  onTap: () {
+                                    onSelected(option);
+                                  },
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      vertical: 12.0,
+                                      horizontal: 12.0,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          option.name,
+                                          style: const TextStyle(
+                                            fontWeight: FontWeight.bold,
+                                            fontSize: 14,
+                                          ),
+                                        ),
+                                        const SizedBox(height: 2),
+                                        Text(
+                                          option.category,
+                                          style: TextStyle(
+                                            fontSize: 11,
+                                            color: Colors.grey.shade600,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                );
+                              },
+                            ),
+                          ),
+                        ),
+                      );
                     },
                   ),
                   const SizedBox(height: 16),
@@ -245,7 +359,9 @@ class _AddMedicationDialogState extends State<AddMedicationDialog> {
                     controller: _dosageController,
                     decoration: InputDecoration(
                       labelText: 'Dosage',
-                      hintText: 'e.g., 81 mg, 1 tablet, 1000 IU',
+                      hintText: _selectedMedication != null 
+                          ? 'Select from common dosages below or type custom'
+                          : 'e.g., 81 mg, 1 tablet, 1000 IU',
                       prefixIcon: const Icon(Icons.medication_liquid_outlined),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
@@ -258,6 +374,49 @@ class _AddMedicationDialogState extends State<AddMedicationDialog> {
                       return null;
                     },
                   ),
+                  
+                  // Suggested dosages chips
+                  if (_suggestedDosages.isNotEmpty) ...[
+                    const SizedBox(height: 12),
+                    Row(
+                      children: [
+                        Icon(Icons.tips_and_updates_outlined, size: 16, color: AppColors.primary),
+                        const SizedBox(width: 6),
+                        Text(
+                          'Common dosages:',
+                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                color: AppColors.textSecondary,
+                                fontWeight: FontWeight.w600,
+                              ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: _suggestedDosages.map((dosage) {
+                        final isSelected = _dosageController.text == dosage;
+                        return FilterChip(
+                          label: Text(dosage),
+                          selected: isSelected,
+                          onSelected: (selected) {
+                            setState(() {
+                              _dosageController.text = dosage;
+                            });
+                          },
+                          backgroundColor: Colors.grey.shade100,
+                          selectedColor: AppColors.primary.withOpacity(0.2),
+                          checkmarkColor: AppColors.primary,
+                          side: BorderSide(
+                            color: isSelected 
+                                ? AppColors.primary 
+                                : Colors.grey.shade300,
+                          ),
+                        );
+                      }).toList(),
+                    ),
+                  ],
                   const SizedBox(height: 16),
                   
                   // Start Date

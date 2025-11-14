@@ -14,13 +14,12 @@ class WeatherService {
   // ============================================================================
 
   /// Fetch weather data by city name
-  Future<WeatherData?> getWeatherByCity(String city) async {
-    try {
-      final weatherUrl = Uri.parse('$apiBase/api/weather/city?city=$city');
+  Future<WeatherData> getWeatherByCity(String city) async {
+    final weatherUrl = Uri.parse('$apiBase/api/weather/city?city=$city');
+    print('[WeatherService] Fetching weather for: $city');
 
-      print('[WeatherService] Fetching weather for: $city');
+    try {
       final response = await http.get(weatherUrl);
-      print('[WeatherService] Response status: ${response.statusCode}');
 
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
@@ -30,30 +29,31 @@ class WeatherService {
         final aqiJson = data['aqi'];
         
         AqiData? aqiData;
-        if (aqiJson != null) {
+        if (aqiJson != null && aqiJson['list'] != null && aqiJson['list'].isNotEmpty) {
           aqiData = AqiData.fromJson(aqiJson);
         }
 
         return WeatherData.fromJson(weatherJson, aqiData);
       } else {
-        print('[WeatherService] Error: ${response.statusCode} - ${response.body}');
+        final errorBody = json.decode(response.body);
+        final errorMessage = errorBody['error'] ?? 'Failed to fetch weather';
+        print('[WeatherService] Error ${response.statusCode}: $errorMessage');
+        throw Exception('Error ($errorMessage)');
       }
-      return null;
     } catch (e) {
-      print('[WeatherService] Error fetching weather: $e');
-      return null;
+      print('[WeatherService] Exception fetching weather: $e');
+      throw Exception('Service unavailable. Check network and backend.');
     }
   }
 
   /// Fetch weather data by coordinates
-  Future<WeatherData?> getWeatherByCoordinates(double lat, double lon) async {
+  Future<WeatherData> getWeatherByCoordinates(double lat, double lon) async {
+    final weatherUrl = Uri.parse('$apiBase/api/weather/coordinates?lat=$lat&lon=$lon');
+    print('[WeatherService] Fetching weather for coordinates: $lat, $lon');
+
     try {
-      final weatherUrl = Uri.parse('$apiBase/api/weather/coordinates?lat=$lat&lon=$lon');
-
-      print('[WeatherService] Fetching weather for coordinates: $lat, $lon');
       final response = await http.get(weatherUrl);
-      print('[WeatherService] Response status: ${response.statusCode}');
-
+      
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
         print('[WeatherService] Weather data received successfully');
@@ -62,18 +62,20 @@ class WeatherService {
         final aqiJson = data['aqi'];
         
         AqiData? aqiData;
-        if (aqiJson != null) {
+        if (aqiJson != null && aqiJson['list'] != null && aqiJson['list'].isNotEmpty) {
           aqiData = AqiData.fromJson(aqiJson);
         }
 
         return WeatherData.fromJson(weatherJson, aqiData);
       } else {
-        print('[WeatherService] Error: ${response.statusCode} - ${response.body}');
+        final errorBody = json.decode(response.body);
+        final errorMessage = errorBody['error'] ?? 'Failed to fetch weather';
+        print('[WeatherService] Error ${response.statusCode}: $errorMessage');
+        throw Exception('Error ($errorMessage)');
       }
-      return null;
     } catch (e) {
-      print('[WeatherService] Error fetching weather: $e');
-      return null;
+      print('[WeatherService] Exception fetching weather: $e');
+      throw Exception('Service unavailable. Check network and backend.');
     }
   }
 }

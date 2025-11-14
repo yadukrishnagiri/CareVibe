@@ -222,10 +222,16 @@ class _HomeScreenState extends State<HomeScreen> {
                         .fadeIn(duration: 400.ms, delay: 100.ms)
                         .slideY(begin: 0.1),
                     const SizedBox(height: 24),
-                    // Weather Card
-                    _WeatherCard()
+                    // Climate Card
+                    const _ClimateCard()
                         .animate()
                         .fadeIn(duration: 400.ms, delay: 200.ms)
+                        .slideY(begin: 0.1),
+                    const SizedBox(height: 16),
+                    // Air Quality Card
+                    const _AqiCard()
+                        .animate()
+                        .fadeIn(duration: 400.ms, delay: 250.ms)
                         .slideY(begin: 0.1),
                     const SizedBox(height: 24),
                     Text('Upcoming appointments', style: Theme.of(context).textTheme.titleMedium),
@@ -759,15 +765,15 @@ class _HealthScoreCard extends StatelessWidget {
   }
 }
 
-// Weather Card
-class _WeatherCard extends StatefulWidget {
-  const _WeatherCard();
+// Climate Card (Weather)
+class _ClimateCard extends StatefulWidget {
+  const _ClimateCard();
 
   @override
-  State<_WeatherCard> createState() => _WeatherCardState();
+  State<_ClimateCard> createState() => _ClimateCardState();
 }
 
-class _WeatherCardState extends State<_WeatherCard> {
+class _ClimateCardState extends State<_ClimateCard> {
   WeatherData? _weatherData;
   bool _isLoading = true;
   String _error = '';
@@ -779,59 +785,50 @@ class _WeatherCardState extends State<_WeatherCard> {
   }
 
   Future<void> _fetchWeather() async {
+    if (!mounted) return;
     setState(() {
       _isLoading = true;
       _error = '';
     });
 
     try {
-      print('[HomeScreen] Starting weather fetch...');
       final weatherService = WeatherService();
       WeatherData? weatherData;
       
       // Try to get user's location first
+      Position? position;
       try {
-        print('[HomeScreen] Attempting to get user location...');
-        final position = await _getUserLocation();
-        if (position != null) {
-          print('[HomeScreen] Location obtained: ${position.latitude}, ${position.longitude}');
-          weatherData = await weatherService.getWeatherByCoordinates(
-            position.latitude,
-            position.longitude,
-          );
-        } else {
-          print('[HomeScreen] Location not available, will use default city');
-        }
+        position = await _getUserLocation();
       } catch (e) {
-        print('[HomeScreen] Location error: $e');
-        // Location failed, will use default city
+        print('[ClimateCard] Location error: $e');
+        _error = 'Location access denied. Please enable location permissions for CareVibe.';
       }
 
-      // If location-based weather failed, use default city
-      if (weatherData == null) {
-        print('[HomeScreen] Fetching weather for default city: London');
+      if (position != null) {
+        print('[ClimateCard] Location obtained: ${position.latitude}, ${position.longitude}');
+        weatherData = await weatherService.getWeatherByCoordinates(
+          position.latitude,
+          position.longitude,
+        );
+      } else {
+        // If location failed, use default city as a fallback
+        print('[ClimateCard] Location not available, using default city');
         weatherData = await weatherService.getWeatherByCity('London');
       }
 
-      if (weatherData != null) {
-        print('[HomeScreen] Weather data fetched successfully!');
+      if (mounted) {
         setState(() {
           _weatherData = weatherData;
           _isLoading = false;
         });
-      } else {
-        print('[HomeScreen] Failed to fetch weather data');
+      }
+    } catch (e) {
+      if (mounted) {
         setState(() {
-          _error = 'Unable to fetch weather data';
+          _error = e.toString().replaceFirst('Exception: ', '');
           _isLoading = false;
         });
       }
-    } catch (e) {
-      print('[HomeScreen] Exception in _fetchWeather: $e');
-      setState(() {
-        _error = 'Error loading weather: $e';
-        _isLoading = false;
-      });
     }
   }
 
@@ -1014,7 +1011,6 @@ class _WeatherCardState extends State<_WeatherCard> {
     final temp = weather.temperature.round();
     final condition = weather.condition;
     final tip = weather.getHealthTip();
-    final aqi = weather.aqi;
 
     return Container(
       padding: const EdgeInsets.all(20),
@@ -1048,36 +1044,12 @@ class _WeatherCardState extends State<_WeatherCard> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Row(
-                      children: [
-                        Text(
-                          '$temp°C',
-                          style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                                color: Colors.white,
-                                fontWeight: FontWeight.bold,
-                              ),
-                        ),
-                        const SizedBox(width: 8),
-                        if (aqi != null)
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 8,
-                              vertical: 4,
-                            ),
-                            decoration: BoxDecoration(
-                              color: _getAqiColor(aqi.level),
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: Text(
-                              'AQI: ${aqi.getLevelDescription()}',
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 10,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
+                    Text(
+                      '$temp°C',
+                      style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
                           ),
-                      ],
                     ),
                     const SizedBox(height: 4),
                     Text(
@@ -1115,6 +1087,306 @@ class _WeatherCardState extends State<_WeatherCard> {
                   ),
             ),
           ],
+        ],
+      ),
+    );
+  }
+}
+
+// Air Quality Index (AQI) Card
+class _AqiCard extends StatefulWidget {
+  const _AqiCard();
+
+  @override
+  State<_AqiCard> createState() => _AqiCardState();
+}
+
+class _AqiCardState extends State<_AqiCard> {
+  WeatherData? _weatherData;
+  bool _isLoading = true;
+  String _error = '';
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchWeather();
+  }
+
+  Future<void> _fetchWeather() async {
+    if (!mounted) return;
+    setState(() {
+      _isLoading = true;
+      _error = '';
+    });
+
+    try {
+      final weatherService = WeatherService();
+      WeatherData? weatherData;
+      
+      // Try to get user's location first
+      Position? position;
+      try {
+        position = await _getUserLocation();
+      } catch (e) {
+        print('[AqiCard] Location error: $e');
+        _error = 'Location access denied.';
+      }
+
+      if (position != null) {
+        print('[AqiCard] Location obtained: ${position.latitude}, ${position.longitude}');
+        weatherData = await weatherService.getWeatherByCoordinates(
+          position.latitude,
+          position.longitude,
+        );
+      } else {
+        // If location failed, use default city as a fallback
+        print('[AqiCard] Location not available, using default city');
+        weatherData = await weatherService.getWeatherByCity('London');
+      }
+
+      if (mounted) {
+        setState(() {
+          _weatherData = weatherData;
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _error = e.toString().replaceFirst('Exception: ', '');
+          _isLoading = false;
+        });
+      }
+    }
+  }
+
+  Future<Position?> _getUserLocation() async {
+    try {
+      // Check if location services are enabled
+      bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+      if (!serviceEnabled) {
+        return null;
+      }
+
+      // Check and request permission
+      LocationPermission permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+        if (permission == LocationPermission.denied) {
+          return null;
+        }
+      }
+
+      if (permission == LocationPermission.deniedForever) {
+        return null;
+      }
+
+      // Get current position
+      final position = await Geolocator.getCurrentPosition(
+        desiredAccuracy: LocationAccuracy.low,
+      );
+      return position;
+    } catch (e) {
+      print('Error getting location: $e');
+      return null;
+    }
+  }
+
+  Color _getAqiColor(int? aqiLevel) {
+    if (aqiLevel == null) return Colors.grey;
+    
+    switch (aqiLevel) {
+      case 1:
+        return const Color(0xFF10B981); // Green
+      case 2:
+        return const Color(0xFF84CC16); // Light Green
+      case 3:
+        return const Color(0xFFF59E0B); // Orange
+      case 4:
+        return const Color(0xFFEF4444); // Red
+      case 5:
+        return const Color(0xFF9333EA); // Purple
+      default:
+        return Colors.grey;
+    }
+  }
+
+  String _getAqiAdvice(int? aqiLevel) {
+    if (aqiLevel == null) {
+      return 'Air quality data unavailable. Exercise with caution.';
+    }
+    
+    switch (aqiLevel) {
+      case 1:
+        return 'Air quality is excellent. Perfect for outdoor activities!';
+      case 2:
+        return 'Air quality is good. Enjoy your outdoor activities.';
+      case 3:
+        return 'Moderate air quality. Sensitive individuals should reduce prolonged outdoor exertion.';
+      case 4:
+        return 'Poor air quality detected. Consider staying indoors and using an air purifier.';
+      case 5:
+        return 'Very poor air quality! Avoid outdoor activities. Stay indoors with air purification.';
+      default:
+        return 'Air quality data unavailable.';
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_isLoading) {
+      return Container(
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: [Colors.purple.shade300, Colors.purple.shade500],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+          borderRadius: BorderRadius.circular(24),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.purple.withOpacity(0.3),
+              blurRadius: 20,
+              offset: const Offset(0, 8),
+            ),
+          ],
+        ),
+        child: const Center(
+          child: SizedBox(
+            height: 40,
+            child: CircularProgressIndicator(
+              color: Colors.white,
+            ),
+          ),
+        ),
+      );
+    }
+
+    if (_error.isNotEmpty || _weatherData == null || _weatherData!.aqi == null) {
+      // Fallback to demo data if there's an error or no AQI data
+      return Container(
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: [Colors.grey.shade400, Colors.grey.shade600],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+          borderRadius: BorderRadius.circular(24),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.grey.withOpacity(0.3),
+              blurRadius: 20,
+              offset: const Offset(0, 8),
+            ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                const Icon(Icons.air_rounded, color: Colors.white, size: 36),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'AQI Unavailable',
+                        style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                            ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        'Unable to fetch air quality data',
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                              color: Colors.white.withOpacity(0.8),
+                              fontSize: 11,
+                            ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      );
+    }
+
+    final aqi = _weatherData!.aqi!;
+    final aqiColor = _getAqiColor(aqi.level);
+    final aqiAdvice = _getAqiAdvice(aqi.level);
+
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            aqiColor.withOpacity(0.8),
+            aqiColor,
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: [
+          BoxShadow(
+            color: aqiColor.withOpacity(0.3),
+            blurRadius: 20,
+            offset: const Offset(0, 8),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(Icons.air_rounded, color: Colors.white, size: 36),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'AQI: ${aqi.getLevelDescription()}',
+                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                          ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'Air Quality Index',
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                            color: Colors.white.withOpacity(0.8),
+                            fontSize: 11,
+                          ),
+                    ),
+                  ],
+                ),
+              ),
+              IconButton(
+                icon: const Icon(Icons.refresh, color: Colors.white),
+                onPressed: _fetchWeather,
+                tooltip: 'Refresh AQI',
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Text(
+            aqiAdvice,
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: Colors.white.withOpacity(0.9),
+                ),
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+          ),
         ],
       ),
     );

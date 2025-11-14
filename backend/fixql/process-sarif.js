@@ -192,7 +192,7 @@ Please review the code manually and apply appropriate fixes.`;
  * @param {string} sarifBasePath - Base path where SARIF file is located (for resolving relative paths)
  * @returns {string} Code context
  */
-function getCodeContext(filePath, contextLines = 10, sarifBasePath = null) {
+function getCodeContext(filePath, line, contextLines = 10, sarifBasePath = null) {
   try {
     // Handle relative paths from SARIF
     let fullPath = filePath;
@@ -409,7 +409,7 @@ async function processSarif(sarifPath, outputDir) {
     console.log(`   File: ${issue.filePath}:${issue.line}`);
     
     // Get code context (pass SARIF base path for better path resolution)
-    const codeContext = getCodeContext(issue.filePath, 10, sarifPath);
+    const codeContext = getCodeContext(issue.filePath, issue.line, 10, sarifPath);
     
     // Generate fix prompt
     console.log(`   Generating fix prompt via Groq API...`);
