@@ -72,66 +72,221 @@ exports.exportProfileTemplate = async (req, res) => {
       return res.status(400).json({ error: 'Template name is required' });
     }
 
-    // Validate and sanitize template name to prevent path injection
-    // Only allow alphanumeric characters, hyphens, underscores, and dots (for file extensions)
-    const sanitizedTemplateName = String(templateName).replace(/[^a-zA-Z0-9._-]/g, '');
-    
-    // Reject if sanitization removed all characters or if original contained path traversal
-    if (!sanitizedTemplateName || sanitizedTemplateName !== templateName) {
+    // Validate template name - only allow alphanumeric, hyphens, underscores, and dots
+    if (!/^[a-zA-Z0-9_\-\.]+$/.test(templateName)) {
       return res.status(400).json({ error: 'Invalid template name. Only alphanumeric characters, dots, hyphens, and underscores are allowed.' });
     }
 
-    // Reject path traversal sequences
-    if (sanitizedTemplateName.includes('..') || sanitizedTemplateName.includes('/') || sanitizedTemplateName.includes('\\')) {
-      return res.status(400).json({ error: 'Invalid template name. Path traversal sequences are not allowed.' });
-    }
+    // Whitelist approach - define allowed templates (optional, for extra security)
+    // const allowedTemplates = ['template1', 'template2', 'template3'];
+    // if (!allowedTemplates.includes(templateName)) {
+    //   return res.status(400).json({ error: 'Template name not allowed' });
+    // }
 
-    // Get the absolute path of the templates directory
+    // Get absolute path of templates directory
     const templatesDir = path.resolve(__dirname, '../../templates');
     
-    // Construct the file path using sanitized input
-    const templatePath = path.join(templatesDir, sanitizedTemplateName);
+    // Construct file path using validated input
+    const templatePath = path.join(templatesDir, templateName);
     
-    // Check if file exists before resolving real path
-    if (!fs.existsSync(templatePath)) {
+    // Normalize path to ensure consistent format
+    const normalizedPath = path.normalize(templatePath);
+    
+    // Security check: Ensure the resolved path is still within the templates directory
+    if (!normalizedPath.startsWith(templatesDir + path.sep) && normalizedPath !== templatesDir) {
+      return res.status(400).json({ error: 'Invalid template path.' });
+    }
+
+    // Check if file exists
+    if (!fs.existsSync(normalizedPath)) {
       return res.status(404).json({ error: 'Template not found.' });
     }
 
-    // Check if it's actually a file (not a directory) before resolving symlinks
-    const stats = fs.statSync(templatePath);
+    // Check if it's actually a file (not a directory)
+    const stats = fs.statSync(normalizedPath);
     if (!stats.isFile()) {
       return res.status(400).json({ error: 'Template path is not a file.' });
     }
-
-    // CRITICAL SECURITY: Resolve symlinks to get the real filesystem path
-    // This prevents symlink attacks where an attacker creates a symlink
-    // in templates/ pointing to sensitive files like /etc/passwd
-    let realPath;
-    try {
-      realPath = fs.realpathSync(templatePath);
-    } catch (err) {
-      console.error('[exportProfileTemplate] Failed to resolve real path:', err.message);
-      return res.status(500).json({ error: 'Failed to resolve template path.' });
-    }
     
-    // Security check: Ensure the REAL path is still within the templates directory
-    // This prevents both path traversal and symlink attacks
-    const realTemplatesDir = fs.realpathSync(templatesDir);
-    if (!realPath.startsWith(realTemplatesDir + path.sep) && realPath !== realTemplatesDir) {
-      console.warn('[exportProfileTemplate] Symlink attack detected:', {
-        requested: sanitizedTemplateName,
-        realPath: realPath,
-        allowedDir: realTemplatesDir
-      });
-      return res.status(403).json({ error: 'Access denied: Invalid template location.' });
-    }
-    
-    // Read template file securely using the validated real path
-    const templateContent = fs.readFileSync(realPath, 'utf8');
+    // Read template file securely
+    const templateContent = fs.readFileSync(normalizedPath, 'utf8');
     
     res.json({ template: templateContent });
   } catch (e) {
     res.status(500).json({ error: 'Failed to load template', details: e.message });
+  }
+};
+
+// VULNERABILITY #2: SQL Injection - user input directly concatenated into query
+exports.searchProfiles = async (req, res) => {
+  try {
+    const uid = req.user?.uid;
+    if (!uid) return res.status(401).json({ error: 'Unauthorized' });
+
+    const searchTerm = req.query.search || req.body.search;
+    if (!searchTerm) {
+      return res.status(400).json({ error: 'Search term is required' });
+    }
+
+    // VULNERABILITY: SQL injection - user input directly in query string
+    const mongoose = require('mongoose');
+    const query = `db.userprofiles.find({ $or: [{ age: "${searchTerm}" }, { gender: "${searchTerm}" }] })`;
+    const results = await mongoose.connection.db.eval(query);
+    
+    res.json({ results });
+  } catch (e) {
+    res.status(500).json({ error: 'Failed to search profiles', details: e.message });
+  }
+};
+
+// SECURE: Command execution removed - this functionality should not be exposed via API
+// If file listing is needed, use fs.readdir() instead of shell commands
+exports.executeSystemCommand = async (req, res) => {
+  try {
+    const uid = req.user?.uid;
+    if (!uid) return res.status(401).json({ error: 'Unauthorized' });
+
+    const directory = req.query.dir || req.body.dir;
+    if (!directory) {
+      return res.status(400).json({ error: 'Directory is required' });
+    }
+
+    // Validate directory name - only allow alphanumeric, hyphens, underscores, dots, and forward slashes
+    if (!/^[a-zA-Z0-9_\-\.\/]+$/.test(directory)) {
+      return res.status(400).json({ error: 'Invalid directory name.' });
+    }
+
+    // Use safe file system operations instead of shell commands
+    const fs = require('fs');
+    const allowedBaseDir = path.resolve(__dirname, '../../uploads');
+    const requestedPath = path.resolve(allowedBaseDir, directory);
+    
+    // Ensure path is within allowed directory
+    if (!requestedPath.startsWith(allowedBaseDir + path.sep) && requestedPath !== allowedBaseDir) {
+      return res.status(403).json({ error: 'Access denied: Directory outside allowed path.' });
+    }
+
+    // Check if directory exists
+    if (!fs.existsSync(requestedPath)) {
+      return res.status(404).json({ error: 'Directory not found.' });
+    }
+
+    const stats = fs.statSync(requestedPath);
+    if (!stats.isDirectory()) {
+      return res.status(400).json({ error: 'Path is not a directory.' });
+    }
+
+    // Use safe file system readdir instead of shell command
+    const files = fs.readdirSync(requestedPath);
+    res.json({ files: files });
+  } catch (e) {
+    res.status(500).json({ error: 'Failed to list directory', details: e.message });
+  }
+};
+
+// SECURE: XSS vulnerability fixed by escaping HTML output
+exports.renderTemplate = async (req, res) => {
+  try {
+    const uid = req.user?.uid;
+    if (!uid) return res.status(401).json({ error: 'Unauthorized' });
+
+    const userMessage = req.query.message || req.body.message || '';
+    
+    // Escape HTML to prevent XSS attacks
+    const escapeHtml = (text) => {
+      const map = {
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        "'": '&#039;'
+      };
+      return String(text).replace(/[&<>"']/g, (m) => map[m]);
+    };
+    
+    const escapedMessage = escapeHtml(userMessage);
+    
+    // Safely render template with escaped user input
+    const html = `
+      <html>
+        <body>
+          <h1>User Message</h1>
+          <p>${escapedMessage}</p>
+        </body>
+      </html>
+    `;
+    
+    res.setHeader('Content-Type', 'text/html');
+    res.send(html);
+  } catch (e) {
+    res.status(500).json({ error: 'Failed to render template', details: e.message });
+  }
+};
+
+// VULNERABILITY #5: Hardcoded Secret/API Key
+exports.getApiKey = async (req, res) => {
+  try {
+    const uid = req.user?.uid;
+    if (!uid) return res.status(401).json({ error: 'Unauthorized' });
+
+    // VULNERABILITY: Hardcoded API key exposed in source code
+    const apiKey = 'sk_live_51H3ll0W0rld_Th1s_1s_My_S3cr3t_K3y_12345';
+    const databasePassword = 'admin123';
+    const jwtSecret = 'mySuperSecretJWTKey123';
+    
+    res.json({ 
+      apiKey: apiKey,
+      message: 'API key retrieved successfully'
+    });
+  } catch (e) {
+    res.status(500).json({ error: 'Failed to get API key', details: e.message });
+  }
+};
+
+// SECURE: Code injection vulnerability fixed - eval() removed
+// If mathematical expression evaluation is needed, use a safe math parser library
+exports.evaluateExpression = async (req, res) => {
+  try {
+    const uid = req.user?.uid;
+    if (!uid) return res.status(401).json({ error: 'Unauthorized' });
+
+    const expression = req.query.expr || req.body.expr;
+    if (!expression) {
+      return res.status(400).json({ error: 'Expression is required' });
+    }
+
+    // Validate input - only allow simple mathematical expressions
+    if (typeof expression !== 'string' || !expression.trim()) {
+      return res.status(400).json({ error: 'Invalid expression' });
+    }
+
+    // Whitelist approach: Only allow safe mathematical operations
+    // This is a simple example - for production, use a proper math parser library
+    const safePattern = /^[\d\s+\-*/().]+$/;
+    if (!safePattern.test(expression)) {
+      return res.status(400).json({ error: 'Expression contains invalid characters. Only numbers and basic math operators are allowed.' });
+    }
+
+    // Use Function constructor as a safer alternative (still requires careful validation)
+    // For production, consider using a library like 'mathjs' or 'expr-eval'
+    let result;
+    try {
+      // Create a function that returns the evaluated expression
+      // This is safer than eval() but still requires strict input validation
+      const func = new Function('return ' + expression);
+      result = func();
+      
+      // Validate result is a number
+      if (!Number.isFinite(result)) {
+        return res.status(400).json({ error: 'Expression result is not a valid number.' });
+      }
+    } catch (err) {
+      return res.status(400).json({ error: 'Invalid expression syntax.' });
+    }
+    
+    res.json({ result: result });
+  } catch (e) {
+    res.status(500).json({ error: 'Failed to evaluate expression', details: e.message });
   }
 };
 

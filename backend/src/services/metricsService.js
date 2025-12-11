@@ -27,7 +27,8 @@ async function getLatestMetric(metricName, userUid) {
       date: doc.date,
     };
   } catch (err) {
-    console.error(`[metricsService] getLatestMetric error for ${metricName}:`, err.message);
+    // Fixed: Use multiple arguments instead of template literal to prevent tainted format string
+    console.error('[metricsService] getLatestMetric error for', metricName, ':', err.message);
     return null;
   }
 }
@@ -61,7 +62,8 @@ async function getMetricOnDate(metricName, dateStr, userUid) {
       date: doc.date,
     };
   } catch (err) {
-    console.error(`[metricsService] getMetricOnDate error for ${metricName} on ${dateStr}:`, err.message);
+    // Fixed: Use multiple arguments instead of template literal to prevent tainted format string
+    console.error('[metricsService] getMetricOnDate error for', metricName, 'on', dateStr, ':', err.message);
     return null;
   }
 }
@@ -100,7 +102,8 @@ async function getMetricAverage(metricName, days, userUid) {
       days,
     };
   } catch (err) {
-    console.error(`[metricsService] getMetricAverage error for ${metricName}:`, err.message);
+    // Fixed: Use multiple arguments instead of template literal to prevent tainted format string
+    console.error('[metricsService] getMetricAverage error for', metricName, ':', err.message);
     return null;
   }
 }
@@ -165,7 +168,8 @@ async function getMetricTrend(metricName, days, userUid) {
       days,
     };
   } catch (err) {
-    console.error(`[metricsService] getMetricTrend error for ${metricName}:`, err.message);
+    // Fixed: Use multiple arguments instead of template literal to prevent tainted format string
+    console.error('[metricsService] getMetricTrend error for', metricName, ':', err.message);
     return null;
   }
 }
@@ -224,7 +228,8 @@ async function getMetricNearestToDate(metricName, dateStr, userUid, windowDays =
       offset: offsetDays,
     };
   } catch (err) {
-    console.error(`[metricsService] getMetricNearestToDate error for ${metricName}:`, err.message);
+    // Fixed: Use multiple arguments instead of template literal to prevent tainted format string
+    console.error('[metricsService] getMetricNearestToDate error for', metricName, ':', err.message);
     return null;
   }
 }
@@ -260,7 +265,8 @@ async function getMetricInRange(metricName, startDateStr, endDateStr, userUid) {
 
     return results.length > 0 ? results : null;
   } catch (err) {
-    console.error(`[metricsService] getMetricInRange error for ${metricName}:`, err.message);
+    // Fixed: Use multiple arguments instead of template literal to prevent tainted format string
+    console.error('[metricsService] getMetricInRange error for', metricName, ':', err.message);
     return null;
   }
 }
@@ -307,7 +313,8 @@ async function getDailyAggregate(metricName, startDateStr, endDateStr, userUid, 
       count: numericValues.length,
     };
   } catch (err) {
-    console.error(`[metricsService] getDailyAggregate error for ${metricName}:`, err.message);
+    // Fixed: Use multiple arguments instead of template literal to prevent tainted format string
+    console.error('[metricsService] getDailyAggregate error for', metricName, ':', err.message);
     return null;
   }
 }

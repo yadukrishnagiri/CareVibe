@@ -1,0 +1,22 @@
+FixQL Scripts Requirements
+==========================
+
+Runtime:
+- Node.js 18 or later
+- CodeQL CLI installed and on PATH
+
+Node packages (install in this folder):
+- groq-sdk
+- dotenv
+
+Environment:
+- backend/.env (or environment variable) must define GROQ_API_KEY
+
+External services:
+- Groq API access with a valid key
+
+
+
+
+
+

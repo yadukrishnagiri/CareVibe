@@ -1,6 +1,7 @@
 # CareVibe — Patient Engagement & AI Health Assistant
 
 A modern healthcare demo built with Flutter (Android/Web) and Node.js, featuring an AI assistant, professional day-focused dashboard, analytics with exports, and cloud-first connectivity.
+CareVibe also ships a companion FixQL toolkit that turns CodeQL findings into Groq-assisted fix prompts stored under `fixprompt/`.
 
 ---
 
@@ -53,6 +54,13 @@ CareVibe is a demo application that allows patients to:
   - Non-web (devices/emulators): `https://carevibe-backend.onrender.com` (override with `--dart-define=API_BASE=`)
 
 ---
+
+## 🧰 FixQL Toolkit
+
+- Automation lives in `backend/fixql/`: `run-codeql.js` orchestrates CodeQL database creation, analysis, and prompt generation while `process-sarif.js` converts SARIF output into Groq-powered fix prompts.
+- Run `node backend/fixql/run-codeql.js` (or `node backend/fixql/run-codeql.js --name demo`) to produce a database folder, SARIF file, and prompt drafts under `fixprompt/`.
+- Process an existing SARIF file with `node backend/fixql/process-sarif.js demo.sarif -o fixprompt/demo-prompts`.
+- `fixprompt/` is tracked via `.gitkeep` and the rest of its markdown output stays locally ignored so prompt drafts are never accidentally committed; the GitHub workflow instead keeps the folder placeholder mentionable in docs.
 
 ## 📦 What You Need Before Starting
 
@@ -508,7 +516,12 @@ Frontend API base is auto-selected in `frontend/lib/services/api.dart` (see Arch
 
 ```
 CareVibe/
-├── backend/                 # Node.js backend API
+├── backend/                 # Node.js backend API + automation helpers
+│   ├── fixql/               # Automation scripts for CodeQL + Groq prompts
+│   │   ├── run-codeql.js
+│   │   ├── process-sarif.js
+│   │   ├── test-groq-connection.js
+│   │   └── README.md
 │   ├── src/
 │   │   ├── controllers/    # Request handlers
 │   │   ├── models/         # Database models
@@ -530,6 +543,8 @@ CareVibe/
 │   ├── android/app/google-services.json  # Firebase config (add this)
 │   ├── pubspec.yaml       # Flutter dependencies
 │   └── README.md          # Frontend-specific docs
+│
+├── fixprompt/              # Groq-generated fix guides (ignored, tracked via `.gitkeep`)
 │
 ├── docs/                  # Dev docs (design, cloud, stories)
 │   ├── DEMO_SETUP.md

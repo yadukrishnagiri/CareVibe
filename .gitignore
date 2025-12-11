@@ -116,6 +116,7 @@ lerna-debug.log*
 
 # Documentation & Test Files
 docs/
+doc/
 WEATHER_*.md
 TEST_*.md
 
@@ -123,6 +124,10 @@ TEST_*.md
 *.sarif
 *-db/
 .codeql/
+
+# Prompt drafts
+fixprompt/*
+!fixprompt/.gitkeep
 
 # Templates (if containing sensitive data)
 backend/templates/

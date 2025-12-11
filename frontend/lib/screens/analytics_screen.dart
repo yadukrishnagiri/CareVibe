@@ -120,36 +120,43 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
         appBar: AppBar(
           title: const Text('Analytics'),
           actions: [
-            TextButton.icon(
-              onPressed: _pickDateRange,
-              icon: const Icon(Icons.calendar_today, size: 16),
-              label: Text(_formatDateRange(), style: const TextStyle(fontSize: 12)),
-              style: TextButton.styleFrom(
-                foregroundColor: Theme.of(context).colorScheme.primary,
+            // Wrapped in FittedBox + Row to avoid overflow on smaller screens.
+            FittedBox(
+              child: Row(
+                children: [
+                  TextButton.icon(
+                    onPressed: _pickDateRange,
+                    icon: const Icon(Icons.calendar_today, size: 16),
+                    label: Text(_formatDateRange(), style: const TextStyle(fontSize: 12)),
+                    style: TextButton.styleFrom(
+                      foregroundColor: Theme.of(context).colorScheme.primary,
+                    ),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.refresh, size: 20),
+                    tooltip: 'Reset to last 30 days',
+                    onPressed: () {
+                      setState(() {
+                        _endDate = DateTime.now();
+                        _startDate = _endDate!.subtract(const Duration(days: 30));
+                      });
+                      _load();
+                    },
+                  ),
+                  const SizedBox(width: 4),
+                  _ModeToggle(
+                    value: _proMode,
+                    onChanged: (v) => setState(() => _proMode = v),
+                  ),
+                  IconButton(
+                    tooltip: 'Export',
+                    icon: const Icon(Icons.ios_share_rounded),
+                    onPressed: () => _openExportSheet(context),
+                  ),
+                  const SizedBox(width: 6),
+                ],
               ),
             ),
-            IconButton(
-              icon: const Icon(Icons.refresh, size: 20),
-              tooltip: 'Reset to last 30 days',
-              onPressed: () {
-                setState(() {
-                  _endDate = DateTime.now();
-                  _startDate = _endDate!.subtract(const Duration(days: 30));
-                });
-                _load();
-              },
-            ),
-            const SizedBox(width: 4),
-            _ModeToggle(
-              value: _proMode,
-              onChanged: (v) => setState(() => _proMode = v),
-            ),
-            IconButton(
-              tooltip: 'Export',
-              icon: const Icon(Icons.ios_share_rounded),
-              onPressed: () => _openExportSheet(context),
-            ),
-            const SizedBox(width: 6),
           ],
           bottom: const TabBar(
             isScrollable: true,
