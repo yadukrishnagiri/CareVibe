@@ -1,628 +1,275 @@
-# CareVibe — Patient Engagement & AI Health Assistant
+## CareVibe
 
-A modern healthcare demo built with Flutter (Android/Web) and Node.js, featuring an AI assistant, professional day-focused dashboard, analytics with exports, and cloud-first connectivity.
-CareVibe also ships a companion FixQL toolkit that turns CodeQL findings into Groq-assisted fix prompts stored under `fixprompt/`.
+CareVibe is a **patient engagement & self‑service** app that combines a **Flutter mobile UI** with a **Node.js/Express backend**, **MongoDB** for data, **Firebase Authentication** for login, and **Groq (LLM)** for an AI wellness/chat experience.
 
----
-
-## 📋 Table of Contents
-
-1. [What is CareVibe?](#what-is-carevibe)
-2. [What You Need Before Starting](#what-you-need-before-starting)
-3. [Step-by-Step Setup Guide](#step-by-step-setup-guide)
-4. [Running the Application](#running-the-application)
-5. [Troubleshooting](#troubleshooting)
-6. [Project Structure](#project-structure)
+It also includes a security workflow: **GitHub CodeQL** scans the backend, and a local toolkit (**FixQL**) can turn **SARIF** results into **AI-generated fix guides** (Markdown) inside `fixprompt/`.
 
 ---
 
-## 🎯 What is CareVibe?
+## Why these tools (high-level)
 
-CareVibe is a demo application that allows patients to:
-- Sign in securely using Google or Email/Password (Firebase Authentication)
-- Chat with an AI health assistant powered by Groq AI
-- Browse a list of nearby doctors
-- View their appointments dashboard
-- Access health insights and tips
-
-**Technologies Used:**
-- **Frontend:** Flutter (Android & Web)
-- **Backend:** Node.js with Express.js
-- **Database:** MongoDB
-- **Authentication:** Firebase
-- **AI Chat:** Groq API
+- **Flutter**: single codebase for Android (and optionally web), fast UI iteration, good Firebase support.
+- **Node.js + Express**: simple REST API, fast iteration, huge ecosystem for auth/security middleware.
+- **MongoDB + Mongoose**: flexible schema for health metrics/profile data; easy prototyping and queries.
+- **Firebase Auth (client) + Firebase Admin (server)**: secure sign-in (Google / email), server-side token verification.
+- **Groq LLM API**: fast model inference for chat responses and security-fix guide generation.
+- **CodeQL + SARIF**: industry-standard static security scanning with a portable result format.
+- **Render (deployment)**: easy demo hosting for the backend; works well for prototypes.
 
 ---
 
-## ✨ Key Features
+## Architecture (how the pieces connect)
 
-- AI Assistant (Groq) with natural-language date parsing, intent detection, and adaptive, plain‑text responses
-- Shared demo data via `DEMO_UID` so every login sees the same dataset (or point to your own Atlas data)
-- Demo authentication bypass (`POST /auth/demo`) for quick testing without Firebase
-- Day-focused Home: Health Score, contextual weather tips, medication reminders, and Today vs Yesterday comparisons
-- Analytics with date range picker, reset, and PDF/CSV export (includes AI summary)
-- Cloud-first API base for devices/emulators; web debug uses localhost automatically
-- Startup connection checks (MongoDB, Groq, Firebase) logged on backend boot
-
-## 🏗️ Architecture
-
-- Flutter app → REST API (JWT)
-- Backend verifies Firebase tokens (or demo auth), queries MongoDB Atlas
-- AI pipeline uses templates + policy to ensure accurate numbers and concise tone
-- API base selection in `frontend/lib/services/api.dart`:
-  - Web (debug): `http://localhost:5000`
-  - Non-web (devices/emulators): `https://carevibe-backend.onrender.com` (override with `--dart-define=API_BASE=`)
-
----
-
-## 🧰 FixQL Toolkit
-
-- Automation lives in `backend/fixql/`: `run-codeql.js` orchestrates CodeQL database creation, analysis, and prompt generation while `process-sarif.js` converts SARIF output into Groq-powered fix prompts.
-- Run `node backend/fixql/run-codeql.js` (or `node backend/fixql/run-codeql.js --name demo`) to produce a database folder, SARIF file, and prompt drafts under `fixprompt/`.
-- Process an existing SARIF file with `node backend/fixql/process-sarif.js demo.sarif -o fixprompt/demo-prompts`.
-- `fixprompt/` is tracked via `.gitkeep` and the rest of its markdown output stays locally ignored so prompt drafts are never accidentally committed; the GitHub workflow instead keeps the folder placeholder mentionable in docs.
-
-## 📦 What You Need Before Starting
-
-### Required Software (Install These First!)
-
-1. **Node.js** (version 18 or higher)
-   - Download from: https://nodejs.org/
-   - Install the LTS version
-   - Verify installation: Open PowerShell/Command Prompt and type `node --version`
-
-2. **MongoDB Community Server**
-   - Download from: https://www.mongodb.com/try/download/community
-   - Install it and make sure MongoDB service is running
-   - **Windows:** MongoDB usually runs automatically as a Windows service. Verify by opening Services (`services.msc`) and checking if "MongoDB" is running.
-
-3. **Flutter SDK**
-   - Download from: https://docs.flutter.dev/get-started/install/windows
-   - Extract and add Flutter to your PATH environment variable
-   - Verify installation: Open PowerShell and type `flutter doctor`
-
-4. **Android Studio** (for Android development)
-   - Download from: https://developer.android.com/studio
-   - Install Android SDK, Android SDK Platform-Tools, and Android Emulator
-   - Or use Chrome for web development (simpler for beginners)
-
-5. **Git** (to clone/download the project)
-   - Download from: https://git-scm.com/download/win
-
-6. **Firebase CLI** (for Firebase setup)
-   - After installing Node.js, open PowerShell and run:
-     ```
-     npm install -g firebase-tools
-     ```
-
-7. **FlutterFire CLI** (for Firebase configuration)
-   - After installing Node.js, open PowerShell and run:
-     ```
-     dart pub global activate flutterfire_cli
-     ```
-
-8. **A Code Editor** (Visual Studio Code recommended)
-   - Download from: https://code.visualstudio.com/
-
-### Required Accounts & API Keys
-
-1. **Firebase Account** (Free)
-   - Go to: https://console.firebase.google.com/
-   - Create a new project
-   - Enable Authentication (Google Sign-in + Email/Password)
-   - Create an Android app (package name: `com.carevibe.patient`)
-   - Download `google-services.json` (you'll need this later)
-   - Go to Project Settings → Service Accounts → Generate New Private Key
-   - Download the Firebase Admin SDK JSON file (you'll need this later)
-
-2. **Groq API Key** (Free)
-   - Go to: https://console.groq.com/
-   - Sign up for a free account
-   - Go to API Keys section
-   - Create a new API key
-   - Copy the key (you'll need this later)
-
-3. **MongoDB** (Local installation is fine, or use MongoDB Atlas free tier)
-   - If using local MongoDB, make sure it's running on `mongodb://127.0.0.1:27017`
-
----
-
-## 🚀 Step-by-Step Setup Guide
-
-> **Note:** Follow these steps EXACTLY in order. Don't skip any step!
-
-### Step 1: Download/Clone the Project
-
-If you have Git installed:
-```powershell
-git clone <your-repository-url>
-cd CareVibe
+```mermaid
+flowchart LR
+  A[Flutter App] -->|Google/Firebase sign-in| F[Firebase Auth]
+  A -->|POST /auth/firebase (idToken)| B[Node.js / Express API]
+  B -->|verifyIdToken| FA[Firebase Admin SDK]
+  B --> M[(MongoDB via Mongoose)]
+  B -->|/ai/chat| G[Groq LLM API]
+  A -->|/api/weather/*| B
+  B -->|Weather provider| W[OpenWeather API (key kept local)]
 ```
 
-Or download the ZIP file and extract it to a folder called `CareVibe`.
+Notes:
+- The mobile app stores a **backend JWT** (issued by the API) and sends it on protected routes.
+- Weather is exposed as **public** endpoints in the backend, while health/profile/chat endpoints require auth.
 
 ---
 
-### Step 2: Set Up MongoDB
+## End-to-end runtime pipeline (user flow)
 
-**For Windows:**
-1. Open Services (`Win + R`, type `services.msc`, press Enter)
-2. Look for "MongoDB" service
-3. If it's not running, right-click → Start
-4. If MongoDB is not installed, download and install from: https://www.mongodb.com/try/download/community
+### Authentication pipeline
 
-**Verify MongoDB is running:**
-- Open PowerShell and run: `mongosh` (or `mongo` if using older version)
-- If you see a MongoDB prompt, you're good! Type `exit` to leave.
+- **Frontend**: user signs in with Firebase (Google or email/password).
+- **Frontend → Backend**: app sends Firebase `idToken` to `POST /auth/firebase`.
+- **Backend**:
+  - verifies the Firebase token using `firebase-admin`
+  - upserts the user record in MongoDB
+  - issues a **backend JWT** (`jsonwebtoken`) used for subsequent API calls
 
----
+There is also a **demo auth** endpoint (`POST /auth/demo`) intended for presentations and local testing (not production).
 
-### Step 3: Set Up Firebase
+### Data + AI pipeline (chat)
 
-#### 3.1 Create Firebase Project
-1. Go to https://console.firebase.google.com/
-2. Click "Add project"
-3. Enter project name: `CareVibe` (or any name)
-4. Continue and finish the setup
+- **Frontend**: user asks a question in the chat UI.
+- **Backend**:
+  - authorizes the request using JWT middleware
+  - fetches relevant profile + metrics from MongoDB
+  - builds a constrained prompt (policy + templates) and calls **Groq**
+  - returns a safe, structured reply (plain-text formatting rules are enforced server-side)
 
-#### 3.2 Enable Authentication
-1. In Firebase Console, go to **Authentication** → **Sign-in method**
-2. Enable **Google** sign-in provider
-3. Enable **Email/Password** sign-in provider
-4. Save both changes
+### Health metrics pipeline
 
-#### 3.3 Create Android App in Firebase
-1. In Firebase Console, click the Android icon (or "Add app" → Android)
-2. Package name: `com.carevibe.patient`
-3. App nickname: `CareVibe Patient`
-4. Click "Register app"
-5. **Download `google-services.json`** — Save this file!
+- Seed demo metrics: `POST /metrics/seed` (auth required)
+- Fetch current user metrics: `GET /metrics/me` (auth required)
+- Analyze metrics: `GET /metrics/analyze` (auth required)
 
-#### 3.4 Add SHA Fingerprints (For Android)
-1. Open PowerShell and navigate to your project:
-   ```powershell
-   cd C:\Users\yaduk\OneDrive\Documents\GitHub\CareVibe\frontend\android
-   ```
-2. Run:
-   ```powershell
-   .\gradlew signingReport
-   ```
-3. Copy the **SHA-1** and **SHA-256** fingerprints (they look like: `C9:E9:64:79:7A:67:...`)
-4. Go back to Firebase Console → Your Android App → App Settings
-5. Scroll to "SHA certificate fingerprints"
-6. Click "Add fingerprint" and paste both SHA-1 and SHA-256
-7. **Re-download `google-services.json`** and replace the old one
+### Medication reminders pipeline
 
-#### 3.5 Get Firebase Admin SDK Key
-1. In Firebase Console, go to **Project Settings** (gear icon)
-2. Go to **Service Accounts** tab
-3. Click **Generate New Private Key**
-4. Click "Generate key" — a JSON file will download
-5. Save this file somewhere safe (e.g., `C:\CareVibe\firebase-admin-key.json`)
-6. **Remember this path!** You'll need it in Step 4.
+- CRUD medication list (auth required)
+- “Today reminders” endpoint supports a reminder-style UI
+- Frontend uses **local notifications** (`flutter_local_notifications`, `timezone`) to alert the user on-device
+
+### Weather pipeline
+
+- Backend exposes public routes:
+  - `GET /api/weather/city`
+  - `GET /api/weather/coordinates`
+- Frontend keeps the weather provider key **out of Git** using `weather_service.template.dart` → local `weather_service.dart` (ignored by `.gitignore`).
 
 ---
 
-### Step 4: Set Up Backend (Node.js)
+## Security pipeline (CodeQL → FixQL → Fix guides)
 
-#### 4.1 Install Backend Dependencies
-1. Open PowerShell and navigate to the backend folder:
-   ```powershell
-   cd C:\Users\yaduk\OneDrive\Documents\GitHub\CareVibe\backend
-   ```
-2. Install all required packages:
-   ```powershell
-   npm install
-   ```
-   This will take a few minutes. Wait for it to finish.
+### 1) GitHub Actions CodeQL scanning (CI)
 
-#### 4.2 Create Backend Environment File
-1. In the `backend` folder, you should see a file called `env.example`
-2. Copy this file and rename it to `.env` (yes, starting with a dot!)
-   - **Windows:** You can do this in PowerShell:
-     ```powershell
-     copy env.example .env
-     ```
-3. Open `.env` file with Notepad or VS Code
-4. Fill in the values (replace the placeholders):
+This repo includes a workflow at `.github/workflows/codeql.yml` that:
+- installs backend dependencies
+- runs **CodeQL** on **JavaScript** (backend)
+- uploads security results to GitHub Security tab
 
-   ```
-   MONGO_URI=mongodb://127.0.0.1:27017/patient_ai_demo
-   JWT_SECRET=your_super_secret_jwt_key_change_this_to_something_random
-   AES_KEY=32characterslongsecretkey!!
-   GROQ_API_KEY=your_groq_api_key_here
-   GOOGLE_APPLICATION_CREDENTIALS=C:\CareVibe\firebase-admin-key.json
-   PORT=5000
-   ```
+CodeQL config lives in `.github/codeql/codeql-config.yml` and is scoped to:
+- include: `backend/`
+- ignore: `frontend/`
 
-   **Important Notes:**
-   - Replace `your_groq_api_key_here` with your actual Groq API key
-   - Replace `C:\CareVibe\firebase-admin-key.json` with the actual path where you saved your Firebase Admin SDK JSON file
-   - Replace `your_super_secret_jwt_key_change_this_to_something_random` with any random string (like `mySecretKey123!@#`)
-   - For `AES_KEY`, use exactly 32 characters (e.g., `12345678901234567890123456789012`)
-   - For cloud deployment, set `MONGO_URI` to your MongoDB Atlas connection string (Step 7)
+### 2) Local “FixQL” toolkit (turn findings into Markdown guides)
 
-5. Save the `.env` file
+Folder: `backend/fixql/`
 
-#### 4.3 Test Backend Connection
-1. Start the backend server:
-   ```powershell
-   npm run dev
-   ```
-2. You should see: `API up` or `Server running on port 5000`
-3. Open a browser and go to: http://localhost:5000/health
-4. You should see: `{"ok":true}`
-5. **Keep this PowerShell window open!** The backend must keep running.
+What it does:
+- runs **CodeQL CLI** locally to generate a SARIF report
+- reads SARIF findings
+- calls **Groq** to generate an **actionable fix guide** per issue
+- writes the results as Markdown into `fixprompt/<name>-prompts/`
 
-#### 4.4 Test Groq API Connection (Optional but Recommended)
-1. Open a **NEW** PowerShell window
-2. Navigate to backend folder:
-   ```powershell
-   cd C:\Users\yaduk\OneDrive\Documents\GitHub\CareVibe\backend
-   ```
-3. Run:
-   ```powershell
-   npm run test:groq
-   ```
-4. If you see "✅ Groq API responded successfully", you're good!
-5. If you see an error, check your `GROQ_API_KEY` in the `.env` file
+Command:
 
----
-
-### Step 5: Set Up Weather API (Optional but Recommended)
-
-1. **Copy weather service template:**
-   ```powershell
-   cd frontend\lib\services
-   copy weather_service.template.dart weather_service.dart
-   ```
-
-2. **Get OpenWeatherMap API key:**
-   - Go to: https://openweathermap.org/
-   - Sign up for free account
-   - Go to "My API Keys" section
-   - Copy your API key
-
-3. **Add API key to weather service:**
-   - Open `frontend\lib\services\weather_service.dart`
-   - Find line 20: `static const String _apiKey = 'YOUR_API_KEY_HERE';`
-   - Replace with your actual key
-   - Save the file
-
-4. **Wait for activation:**
-   - API keys take 10-15 minutes to activate
-
-**Note:** The actual `weather_service.dart` is in `.gitignore` for security. See `frontend/lib/services/WEATHER_SETUP.md` for details.
-
----
-
-### Step 6: Set Up Frontend (Flutter)
-
-#### 6.1 Install Flutter Dependencies
-1. Open a **NEW** PowerShell window (keep backend running!)
-2. Navigate to the frontend folder:
-   ```powershell
-   cd C:\Users\yaduk\OneDrive\Documents\GitHub\CareVibe\frontend
-   ```
-3. Install Flutter packages:
-   ```powershell
-   flutter pub get
-   ```
-   Wait for it to finish.
-
-#### 6.2 Add Firebase Configuration File
-1. Copy the `google-services.json` file you downloaded from Firebase
-2. Paste it into: `frontend\android\app\google-services.json`
-3. Make sure the file path is exactly: `frontend\android\app\google-services.json`
-
-#### 6.3 Configure Firebase for Flutter (Web Support)
-1. Make sure you have FlutterFire CLI installed:
-   ```powershell
-   dart pub global activate flutterfire_cli
-   ```
-2. Add FlutterFire CLI to PATH (for current session):
-   ```powershell
-   $env:PATH += ";$env:LocalAppData\Pub\Cache\bin"
-   ```
-3. From the `frontend` folder, run:
-   ```powershell
-   flutterfire configure
-   ```
-4. Follow the prompts:
-   - Select your Firebase project
-   - Select platforms: `android`, `web`
-   - This will generate `lib/firebase_options.dart` automatically
-
-#### 6.4 Verify Flutter Setup
-1. Run Flutter doctor to check everything:
-   ```powershell
-   flutter doctor
-   ```
-2. Fix any issues it reports (usually related to Android SDK or licenses)
-
----
-
-### Step 7: Run the Application
-
-#### Option A: Run on Web (Easier for Beginners)
-
-1. **Make sure backend is running** (Step 4.3)
-2. Open PowerShell in the `frontend` folder:
-   ```powershell
-   cd C:\Users\yaduk\OneDrive\Documents\GitHub\CareVibe\frontend
-   ```
-3. Run the Flutter web app:
-   ```powershell
-   flutter run -d chrome
-   ```
-4. Wait for the app to compile and open in Chrome
-5. Sign in with Google or Email/Password
-6. Start using the app!
-
-#### Option B: Run on Android Emulator
-
-1. **Start Android Emulator:**
-   - Open Android Studio
-   - Go to Tools → Device Manager
-   - Click "Create Device" if you don't have one
-   - Start an emulator (API 30 or higher recommended)
-
-2. **Make sure backend is running** (Step 4.3)
-
-3. **Run Flutter app:**
-   ```powershell
-   cd C:\Users\yaduk\OneDrive\Documents\GitHub\CareVibe\frontend
-   flutter run
-   ```
-   Or specify device:
-   ```powershell
-   flutter run -d <device-id>
-   ```
-   (Find device ID with: `flutter devices`)
-
----
-
-### Step 8: Deploy to the Cloud & Build the APK
-
-Want the app to run on a real phone without your laptop on? Deploy the backend to Render (free tier) and point the Flutter app to that URL.
-
-#### 8.1 Deploy backend to Render.com
-1. Sign up at [render.com](https://render.com) with your GitHub account.
-2. Click **New → Web Service** and choose the `yadukrishnagiri/CareVibe` repository.
-3. Use these settings:
-   - **Root Directory:** `backend`
-   - **Build Command:** `npm install`
-   - **Start Command:** `npm run start`
-   - **Instance Type:** Free
-4. In the **Environment** section add your secrets:
-   - `MONGO_URI` → Atlas connection string (with password encoded, e.g. `%40` for `@`)
-   - `JWT_SECRET`, `AES_KEY`, `GROQ_API_KEY`
-   - `GOOGLE_APPLICATION_CREDENTIALS` → `/etc/secrets/firebase-admin-key.json`
-5. In **Secret Files**, create `firebase-admin-key.json` and paste your Firebase Admin SDK JSON.
-6. Click **Deploy web service**.
-
-#### 8.2 Whitelist Render in MongoDB Atlas
-1. In MongoDB Atlas go to **Security → Network Access**.
-2. Add IP `0.0.0.0/0` (allow all) or the specific Render IPs.
-3. Wait until the status shows **Active** and redeploy if needed.
-
-#### 8.3 Update Flutter to use the cloud API
-1. Open `frontend/lib/services/api.dart`.
-2. Replace the `apiBase` value with your Render URL, e.g.
-   ```dart
-   const String apiBase = 'https://carevibe-backend.onrender.com';
-   ```
-3. (Optional) commit and push the change to GitHub so future deploys use it.
-
-#### 8.4 Build the release APK
-1. In PowerShell:
-   ```powershell
-   cd C:\Users\yaduk\OneDrive\Documents\GitHub\CareVibe\frontend
-   flutter clean
-   flutter pub get
-   flutter build apk --release
-   ```
-2. APK output: `frontend\build\app\outputs\flutter-apk\app-release.apk`
-
-#### 8.5 Install on a real device
-- Copy the APK to your phone and open it, or run:
-  ```powershell
-  adb install frontend\build\app\outputs\flutter-apk\app-release.apk
-  ```
-- Sign in with Google, open AI chat, doctors, dashboard — everything now uses the Render backend.
-
----
-
-## 🔑 Environment Variables
-
-Backend `.env` (use `backend/env.example` as a template):
-
-```
-MONGO_URI=mongodb+srv://<user>:<pass>@cluster..../patient_ai_demo
-DEMO_UID=demo-shared
-JWT_SECRET=<random-strong-string>
-AES_KEY=<32-characters>
-GROQ_API_KEY=<your-groq-api-key>
-FIREBASE_SERVICE_ACCOUNT={"type":"service_account",...}  # preferred in cloud
-# or
-GOOGLE_APPLICATION_CREDENTIALS=/etc/secrets/firebase-admin-key.json
-PORT=5000
+```bash
+node backend/fixql/run-codeql.js --name demo
 ```
 
-Frontend API base is auto-selected in `frontend/lib/services/api.dart` (see Architecture above).
+Outputs:
+- database folder: `demo-db/`
+- SARIF file: `demo.sarif`
+- fix guides: `fixprompt/demo-prompts/*.md`
+
+Why this exists:
+- CodeQL findings can be hard to apply quickly.
+- FixQL accelerates learning by generating “explain + fix + test plan” documents from real findings.
 
 ---
 
-## 🔧 Troubleshooting
+## APIs (backend)
 
-### Backend Issues
+Backend entrypoint: `backend/src/server.js`
 
-**Problem:** `Cannot find module` error
-- **Solution:** Run `npm install` in the `backend` folder
+### Public
 
-**Problem:** `MongoDB connection failed`
-- **Solution:** Make sure MongoDB service is running (check Services)
+- `GET /health`
+- `GET /doctors`
+- `GET /api/weather/city`
+- `GET /api/weather/coordinates`
 
-**Problem:** `Firebase verification failed`
-- **Solution:** Check `GOOGLE_APPLICATION_CREDENTIALS` path in `.env` file. Make sure the file exists and path is correct.
+### Auth
 
-**Problem:** `GROQ_API_KEY` error
-- **Solution:** Check your `.env` file. Make sure `GROQ_API_KEY` has a value (no spaces around the `=` sign)
+- `POST /auth/firebase` → verify Firebase token, returns backend JWT
+- `POST /auth/demo` → demo-only JWT issuance
 
-**Problem:** Port 5000 already in use
-- **Solution:** Change `PORT=5000` to `PORT=5001` in `.env` file, then update `frontend/lib/services/api.dart` to use port 5001
+### Protected (JWT required)
 
-### Frontend Issues
-
-**Problem:** `google-services.json` not found
-- **Solution:** Make sure the file is at `frontend\android\app\google-services.json`
-
-**Problem:** Flutter build fails
-- **Solution:** Run `flutter clean` then `flutter pub get`
-
-**Problem:** Firebase authentication doesn't work
-- **Solution:** 
-  - Verify `google-services.json` is in the correct location
-  - Check SHA fingerprints are added in Firebase Console
-  - Re-download `google-services.json` after adding fingerprints
-
-**Problem:** Can't connect to backend API
-- **Solution:** 
-  - If running locally: start the backend with `npm run dev`
-  - For web (local): backend should be accessible at `http://localhost:5000`
-  - For Android emulator (local): backend should be accessible at `http://10.0.2.2:5000`
-  - For Render deployment: open `https://<your-service>.onrender.com/health` and confirm `{"ok":true}`
-  - Ensure `frontend/lib/services/api.dart` points to the same URL you just verified
-
-**Problem:** AI chat shows "AI service unavailable"
-- **Solution:** 
-  - Check your `GROQ_API_KEY` in backend `.env` file
-  - Run `npm run test:groq` in backend folder to test Groq connection
-  - Check backend console logs for detailed error messages
-
-### General Issues
-
-**Problem:** PowerShell commands not recognized
-- **Solution:** Make sure you're using PowerShell (not CMD). Some commands require PowerShell.
-
-**Problem:** Flutter doctor shows issues
-- **Solution:** Follow the instructions `flutter doctor` provides. Usually involves:
-  - Accepting Android licenses: `flutter doctor --android-licenses`
-  - Installing missing SDK components in Android Studio
+- `POST /ai/chat`
+- `GET /appointments/:userId`
+- `GET /metrics/me`
+- `POST /metrics/seed`
+- `GET /metrics/analyze`
+- `GET /medications/me`
+- `GET /medications/me/today`
+- `POST /medications`
+- `DELETE /medications/:id`
+- `GET/PUT /profile/me`
+- profile export/search/template routes under `/profile/*`
 
 ---
 
-## 📁 Project Structure
+## Libraries and tools (and why)
 
+### Backend (`backend/package.json`)
+
+- **express**: REST routing + middleware model
+- **mongoose**: MongoDB ODM for schema + validation + query ergonomics
+- **firebase-admin**: verify Firebase `idToken` on the server
+- **jsonwebtoken**: issue/verify backend JWTs for API authorization
+- **helmet**: safer HTTP headers (baseline hardening)
+- **cors**: allow frontend to call backend across origins during development
+- **express-rate-limit**: basic abuse protection for public endpoints
+- **morgan**: request logging for debugging
+- **dotenv**: local env variable loading (`backend/.env`)
+- **axios**: HTTP client for calling Groq/weather/other APIs
+- **groq-sdk**: Groq client (used by FixQL; backend chat can also use Groq)
+- **chrono-node**: natural language date parsing (useful for “last week”, “a month ago” queries)
+- **nodemon (dev)**: hot-reload during backend development
+
+### Frontend (`frontend/pubspec.yaml`)
+
+- **firebase_core / firebase_auth / google_sign_in**: auth + Google sign-in flow
+- **http**: REST API calls to the backend
+- **provider**: state management (session, profile, theme, shell navigation)
+- **google_fonts**: consistent, modern typography
+- **fl_chart**: charts for analytics dashboard
+- **flutter_animate**: UI motion polish for a better UX
+- **geolocator**: location for nearby doctors/places and weather-by-coordinates
+- **shared_preferences**: light local storage (tokens, user settings)
+- **pdf / printing / share_plus / path_provider**: export/share user info (reports, profile exports)
+- **flutter_local_notifications / timezone**: medication reminder notifications reliably across timezones
+
+### Dev / Platform tools
+
+- **Flutter SDK + Android Studio**: build and run the app on emulator/device
+- **Firebase CLI + FlutterFire CLI**: configure Firebase apps + generate `firebase_options.dart` (this file is ignored by Git for safety)
+- **MongoDB Community Server or MongoDB Atlas**: local DB or cloud DB for demos
+- **Render**: quick backend hosting for demos (free tier sleeps on inactivity)
+
+---
+
+## Repo structure (what goes where)
+
+- `backend/`: Node.js/Express API + MongoDB models + controllers + scripts
+  - `src/server.js`: API entrypoint
+  - `src/routes/`: route definitions
+  - `src/controllers/`: request handlers (chat, profile, health, meds, etc.)
+  - `src/models/`: Mongoose models
+  - `src/middleware/`: JWT auth middleware
+  - `scripts/`: connection tests and utility scripts
+  - `fixql/`: CodeQL automation + SARIF → fix-guide generator
+- `frontend/`: Flutter application
+  - `lib/main.dart`: app entrypoint
+  - `lib/screens/`, `lib/widgets/`: UI
+  - `lib/services/`: backend API clients + weather service template
+  - `lib/providers/`: Provider-based app state
+- `fixprompt/`: generated fix guides (usually ignored to keep the repo clean; sample demos may be kept)
+- `.github/`: CodeQL configuration + workflow
+
+---
+
+## Configuration & secrets (important)
+
+Backend environment variables live in `backend/.env` (ignored by Git). Template: `backend/env.example`.
+
+Typical variables:
+- `MONGO_URI`: MongoDB connection string
+- `JWT_SECRET`: JWT signing secret
+- `GROQ_API_KEY`: Groq key for AI features and FixQL
+- `GOOGLE_APPLICATION_CREDENTIALS`: path to Firebase Admin SDK JSON key
+- `PORT`: backend port (default 5000)
+
+Frontend secrets:
+- `frontend/android/app/google-services.json` is **not committed**
+- `frontend/lib/firebase_options.dart` is **not committed**
+- Weather key is stored only in local `frontend/lib/services/weather_service.dart` (not committed)
+
+These are enforced by `.gitignore` to reduce the chance of leaking credentials.
+
+---
+
+## How to run (local dev)
+
+### Backend
+
+```bash
+cd backend
+npm install
+copy env.example .env   # Windows
+# then edit backend/.env values
+npm run dev
 ```
-CareVibe/
-├── backend/                 # Node.js backend API + automation helpers
-│   ├── fixql/               # Automation scripts for CodeQL + Groq prompts
-│   │   ├── run-codeql.js
-│   │   ├── process-sarif.js
-│   │   ├── test-groq-connection.js
-│   │   └── README.md
-│   ├── src/
-│   │   ├── controllers/    # Request handlers
-│   │   ├── models/         # Database models
-│   │   ├── routes/         # API routes
-│   │   ├── middleware/     # Auth middleware
-│   │   └── server.js       # Main server file
-│   ├── scripts/            # Utility scripts (Groq/Mongo tests, validators)
-│   ├── env.example         # Environment template
-│   ├── package.json        # Node.js dependencies
-│   └── README.md           # Backend-specific docs
-│
-├── frontend/               # Flutter app
-│   ├── lib/
-│   │   ├── screens/       # Login, Home, AI Assistant, Dashboard, Analytics, Doctors
-│   │   ├── widgets/       # Reusable UI components
-│   │   ├── providers/     # Auth/session/theme
-│   │   ├── services/      # API client, metrics, medications
-│   │   └── main.dart      # App entry point
-│   ├── android/app/google-services.json  # Firebase config (add this)
-│   ├── pubspec.yaml       # Flutter dependencies
-│   └── README.md          # Frontend-specific docs
-│
-├── fixprompt/              # Groq-generated fix guides (ignored, tracked via `.gitkeep`)
-│
-├── docs/                  # Dev docs (design, cloud, stories)
-│   ├── DEMO_SETUP.md
-│   ├── PROJECT_STORY.md
-│   ├── CHAT_IMPROVEMENTS_SUMMARY.md
-│   └── cloud_dotty.md
-│
-├── project_document/
-│   └── PROJECT_DOCUMENTATION.md  # Formal, end-to-end documentation
-│
-├── REQUIREMENTS.txt
-├── README.md
-└── .gitignore
+
+Health check: `http://localhost:5000/health`
+
+### Frontend
+
+```bash
+cd frontend
+flutter pub get
+flutter run
+```
+
+API base behavior is defined in `frontend/lib/services/api.dart`:
+- Web debug uses `http://localhost:5000`
+- Mobile defaults to the deployed Render backend
+- You can override with `--dart-define=API_BASE=...`
+
+Example (Android emulator → local backend):
+
+```bash
+flutter run --dart-define=API_BASE=http://10.0.2.2:5000
 ```
 
 ---
 
-## 🔒 Security & Code Quality
+## Extra docs (already in the repo)
 
-- Code scanning with GitHub CodeQL is enabled for the Node backend. It runs on pushes/PRs to `main` and weekly.
-- Workflow: `.github/workflows/codeql.yml` (scopes analysis to `backend/` via `./.github/codeql/codeql-config.yml`).
-- View results: GitHub → Security → Code scanning alerts.
-
-## 🗂️ Documentation Folder (ignored by Git)
-
-- The `docs/` folder is ignored by Git to keep the repository lean for app code.
-- If docs were previously committed, untrack them (files stay locally):
-  ```powershell
-  git rm -r --cached docs
-  git commit -m "chore: stop tracking docs/"
-  git push
-  ```
-- Want to keep specific files tracked? Remove `docs/` from `.gitignore` and add explicit ignores (e.g., `docs/*.md` except one file), or add a `.gitignore` inside `docs/` to fine-tune.
-
----
-
-## ✅ Quick Checklist
-
-Before running the app, make sure:
-
-- [ ] Node.js is installed (`node --version` works)
-- [ ] MongoDB is installed and running
-- [ ] Flutter is installed (`flutter doctor` shows mostly green checkmarks)
-- [ ] Firebase project created with Authentication enabled
-- [ ] `google-services.json` downloaded and placed in `frontend/android/app/`
-- [ ] Firebase Admin SDK JSON downloaded
-- [ ] Groq API key obtained
-- [ ] Backend `.env` file created with all values filled
-- [ ] Backend dependencies installed (`npm install` in backend folder)
-- [ ] Frontend dependencies installed (`flutter pub get` in frontend folder)
-- [ ] Backend server running locally (`npm run dev`) **or** Render deployment responding at `/health`
-- [ ] `frontend/lib/services/api.dart` points to the correct backend URL (local or Render)
-- [ ] Frontend app running (`flutter run`) *(for local testing)*
-- [ ] Release APK built (`flutter build apk --release`) and installed on device *(for mobile demo)*
-
----
-
-## 📚 Documentation References
-
-- `docs/DEMO_SETUP.md` — Shared demo data, Atlas integration, and testing
-- `docs/PROJECT_STORY.md` — Development journey and key milestones
-- `docs/CHAT_IMPROVEMENTS_SUMMARY.md` — AI upgrades (intents, dates, policy)
-- `docs/cloud_dotty.md` — Cloud behaviors and redeploy notes
-- `project_document/PROJECT_DOCUMENTATION.md` — Formal, end-to-end documentation
-
----
-
-## 🆘 Need Help?
-
-If you're stuck:
-1. Check Troubleshooting above
-2. Inspect backend logs (look for connection status lines)
-3. Verify environment variables in Render or `.env`
-4. Confirm Atlas Network Access is active
-5. Ensure Flutter and Android SDK setups are complete (`flutter doctor`)
-
----
-
-**Happy Coding! 🚀**
-
-CareVibe is demo-ready and cloud-first: quick onboarding, consistent data, and an AI assistant that understands your metrics.
+- Backend setup: `backend/README.md`
+- Frontend setup: `frontend/README.md`
+- FixQL guide: `backend/fixql/README.md` and `backend/fixql/SETUP_GUIDE.md`
+- Weather setup: `frontend/lib/services/WEATHER_SETUP.md`
