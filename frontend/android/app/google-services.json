@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "1066923811249",
+    "project_id": "vibecare-f9225",
+    "storage_bucket": "vibecare-f9225.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1066923811249:android:f9359730f78a9a4c131d90",
+        "android_client_info": {
+          "package_name": "com.carevibe.patient"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "1066923811249-de4vlj8b5glas90sjutdismtno6agumf.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.carevibe.patient",
+            "certificate_hash": "c9e964797a67bb4568280632044e8d5f39557d9d"
+          }
+        },
+        {
+          "client_id": "1066923811249-otir8c6j5prbbfi63of3gc02evi6o7t1.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyC23c_2ti6UcxtezPhFrdhFpvdXUNK1LOY"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "1066923811249-otir8c6j5prbbfi63of3gc02evi6o7t1.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

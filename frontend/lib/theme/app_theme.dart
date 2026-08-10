@@ -77,7 +77,7 @@ class AppTheme {
         ),
         hintStyle: GoogleFonts.inter(color: AppColors.textSecondary.withOpacity(0.6)),
       ),
-      cardTheme: CardThemeData(
+      cardTheme: CardTheme(
         color: AppColors.surface,
         elevation: 4,
         shadowColor: AppColors.primary.withOpacity(0.08),
@@ -127,7 +127,7 @@ class AppTheme {
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(18), borderSide: BorderSide.none),
         hintStyle: GoogleFonts.inter(color: Colors.grey[400]),
       ),
-      cardTheme: CardThemeData(
+      cardTheme: CardTheme(
         color: const Color(0xFF111827),
         elevation: 0,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),

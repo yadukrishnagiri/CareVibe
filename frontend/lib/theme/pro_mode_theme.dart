@@ -161,7 +161,7 @@ extension ProModeTheme on ThemeData {
           color: ProModeColors.textMuted,
         ),
       ),
-      cardTheme: CardThemeData(
+      cardTheme: CardTheme(
         color: ProModeColors.surface(0.03),
         elevation: 0,
         shape: RoundedRectangleBorder(

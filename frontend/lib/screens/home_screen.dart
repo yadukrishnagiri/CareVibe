@@ -1405,6 +1405,17 @@ class _ComparisonCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final panelColor = isDark
+        ? const Color(0xFF111827)
+        : Colors.white;
+    final dividerColor = isDark
+        ? Colors.white.withOpacity(0.06)
+        : Colors.black.withOpacity(0.06);
+    final shadowColor = isDark
+        ? Colors.black.withOpacity(0.35)
+        : Colors.black.withOpacity(0.05);
+
     return FutureBuilder<Map<String, HealthMetricDto?>>(
       future: Future.wait([
         todayFuture,
@@ -1416,10 +1427,17 @@ class _ComparisonCard extends StatelessWidget {
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return Container(
-            height: 120,
+            height: 220,
             decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.surface,
+              color: panelColor,
               borderRadius: BorderRadius.circular(20),
+              boxShadow: [
+                BoxShadow(
+                  color: shadowColor,
+                  blurRadius: 18,
+                  offset: const Offset(0, 10),
+                ),
+              ],
             ),
             child: const Center(child: CircularProgressIndicator()),
           );
@@ -1432,8 +1450,15 @@ class _ComparisonCard extends StatelessWidget {
           return Container(
             padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.surface,
+              color: panelColor,
               borderRadius: BorderRadius.circular(20),
+              boxShadow: [
+                BoxShadow(
+                  color: shadowColor,
+                  blurRadius: 18,
+                  offset: const Offset(0, 10),
+                ),
+              ],
             ),
             child: Center(
               child: Text(
@@ -1447,129 +1472,121 @@ class _ComparisonCard extends StatelessWidget {
         final metrics = [
           _ComparisonMetric(
             label: 'Steps',
+            icon: Icons.directions_walk_rounded,
             todayValue: (today?.stepCount ?? 0).toDouble(),
             yesterdayValue: (yesterday?.stepCount ?? 0).toDouble(),
             format: (v) => '${(v / 1000).toStringAsFixed(1)}k',
+            higherIsBetter: true,
           ),
           _ComparisonMetric(
             label: 'Sleep',
+            icon: Icons.bedtime_rounded,
             todayValue: today?.sleepDurationHr ?? 0,
             yesterdayValue: yesterday?.sleepDurationHr ?? 0,
             format: (v) => '${v.toStringAsFixed(1)}h',
+            higherIsBetter: true,
           ),
           _ComparisonMetric(
             label: 'Heart Rate',
+            icon: Icons.favorite_rounded,
             todayValue: today?.restingHeartRateBpm.toDouble() ?? 0,
             yesterdayValue: yesterday?.restingHeartRateBpm.toDouble() ?? 0,
             format: (v) => '${v.toInt()} bpm',
+            higherIsBetter: false,
           ),
           _ComparisonMetric(
             label: 'SpO₂',
+            icon: Icons.air_rounded,
             todayValue: today?.spo2Percent?.toDouble() ?? 0,
             yesterdayValue: yesterday?.spo2Percent?.toDouble() ?? 0,
             format: (v) => '${v.toInt()}%',
+            higherIsBetter: true,
           ),
         ];
 
         return Container(
-          padding: const EdgeInsets.all(20),
+          padding: const EdgeInsets.fromLTRB(20, 18, 20, 14),
           decoration: BoxDecoration(
-            color: Theme.of(context).colorScheme.surface,
+            color: panelColor,
             borderRadius: BorderRadius.circular(20),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.05),
-                blurRadius: 12,
-                offset: const Offset(0, 8),
+                color: shadowColor,
+                blurRadius: 18,
+                offset: const Offset(0, 10),
               ),
             ],
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                'Today vs Yesterday',
-                style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.bold,
-                    ),
-              ),
-              const SizedBox(height: 16),
-              Wrap(
-                spacing: 12,
-                runSpacing: 12,
-                children: metrics.map((metric) {
-                  final change = metric.todayValue - metric.yesterdayValue;
-                  final percentChange = metric.yesterdayValue > 0
-                      ? (change / metric.yesterdayValue * 100).abs()
-                      : 0.0;
-                  final isPositive = change > 0 || (change == 0 && metric.todayValue > 0);
-                  
-                  return Container(
-                    width: (MediaQuery.of(context).size.width - 64) / 2,
-                    padding: const EdgeInsets.all(16),
+              // Header
+              Row(
+                children: [
+                  Container(
+                    width: 36,
+                    height: 36,
                     decoration: BoxDecoration(
-                      color: Theme.of(context).colorScheme.surface,
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(
-                        color: isPositive
-                            ? const Color(0xFF10B981).withOpacity(0.3)
-                            : const Color(0xFFEF4444).withOpacity(0.3),
-                      ),
+                      color: AppColors.primary.withOpacity(0.15),
+                      borderRadius: BorderRadius.circular(10),
                     ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          metric.label,
-                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
-                              ),
-                        ),
-                        const SizedBox(height: 8),
-                        Row(
-                          children: [
-                            Expanded(
-                              child: Text(
-                                metric.format(metric.todayValue),
-                                style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                              ),
-                            ),
-                            if (metric.yesterdayValue > 0)
-                              Row(
-                                children: [
-                                  Icon(
-                                    change > 0 ? Icons.arrow_upward : change < 0 ? Icons.arrow_downward : Icons.remove,
-                                    size: 16,
-                                    color: change > 0
-                                        ? const Color(0xFF10B981)
-                                        : change < 0
-                                            ? const Color(0xFFEF4444)
-                                            : AppColors.textSecondary,
-                                  ),
-                                  const SizedBox(width: 4),
-                                  Text(
-                                    '${percentChange.toStringAsFixed(0)}%',
-                                    style: TextStyle(
-                                      fontSize: 12,
-                                      fontWeight: FontWeight.bold,
-                                      color: change > 0
-                                          ? const Color(0xFF10B981)
-                                          : change < 0
-                                              ? const Color(0xFFEF4444)
-                                              : AppColors.textSecondary,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                          ],
-                        ),
-                      ],
+                    child: Icon(
+                      Icons.compare_arrows_rounded,
+                      color: AppColors.primary,
+                      size: 20,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      'Today vs Yesterday',
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                            fontWeight: FontWeight.w600,
+                            letterSpacing: 0.2,
+                          ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 14),
+              // Legend
+              _ComparisonLegend(isDark: isDark),
+              const SizedBox(height: 10),
+              // Metric rows
+              ...List.generate(metrics.length, (index) {
+                final metric = metrics[index];
+                final change = metric.todayValue - metric.yesterdayValue;
+                final percentChange = metric.yesterdayValue > 0
+                    ? (change / metric.yesterdayValue * 100)
+                    : (metric.todayValue > 0 ? 100.0 : 0.0);
+                final isFlat = change.abs() < 0.0001;
+                final isImprovement = metric.higherIsBetter
+                    ? change >= 0
+                    : change <= 0;
+
+                final children = <Widget>[
+                  _ComparisonRow(
+                    metric: metric,
+                    change: change,
+                    percentChange: percentChange,
+                    isImprovement: isImprovement,
+                    isFlat: isFlat,
+                    isDark: isDark,
+                  ),
+                ];
+
+                if (index < metrics.length - 1) {
+                  children.add(
+                    Divider(
+                      color: dividerColor,
+                      height: 1,
+                      thickness: 1,
                     ),
                   );
-                }).toList(),
-              ),
+                }
+
+                return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: children);
+              }),
             ],
           ),
         );
@@ -1581,15 +1598,217 @@ class _ComparisonCard extends StatelessWidget {
 class _ComparisonMetric {
   _ComparisonMetric({
     required this.label,
+    required this.icon,
     required this.todayValue,
     required this.yesterdayValue,
     required this.format,
+    required this.higherIsBetter,
   });
 
   final String label;
+  final IconData icon;
   final double todayValue;
   final double yesterdayValue;
   final String Function(double) format;
+  final bool higherIsBetter;
+}
+
+class _ComparisonLegend extends StatelessWidget {
+  const _ComparisonLegend({required this.isDark});
+
+  final bool isDark;
+
+  @override
+  Widget build(BuildContext context) {
+    final mutedColor = isDark ? Colors.grey[400]! : AppColors.textSecondary;
+    return Row(
+      children: [
+        _LegendDot(
+          color: AppColors.primary,
+          label: 'Today',
+          textColor: mutedColor,
+        ),
+        const SizedBox(width: 16),
+        _LegendDot(
+          color: mutedColor.withOpacity(0.55),
+          label: 'Yesterday',
+          textColor: mutedColor,
+        ),
+      ],
+    );
+  }
+}
+
+class _LegendDot extends StatelessWidget {
+  const _LegendDot({
+    required this.color,
+    required this.label,
+    required this.textColor,
+  });
+
+  final Color color;
+  final String label;
+  final Color textColor;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          width: 8,
+          height: 8,
+          decoration: BoxDecoration(
+            color: color,
+            shape: BoxShape.circle,
+          ),
+        ),
+        const SizedBox(width: 6),
+        Text(
+          label,
+          style: TextStyle(
+            fontSize: 12,
+            color: textColor,
+            fontWeight: FontWeight.w500,
+            letterSpacing: 0.1,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _ComparisonRow extends StatelessWidget {
+  const _ComparisonRow({
+    required this.metric,
+    required this.change,
+    required this.percentChange,
+    required this.isImprovement,
+    required this.isFlat,
+    required this.isDark,
+  });
+
+  final _ComparisonMetric metric;
+  final double change;
+  final double percentChange;
+  final bool isImprovement;
+  final bool isFlat;
+  final bool isDark;
+
+  @override
+  Widget build(BuildContext context) {
+    final mutedColor = isDark ? Colors.grey[400]! : AppColors.textSecondary;
+    final primaryTextColor = isDark ? Colors.white : AppColors.textPrimary;
+
+    final accentColor = isFlat
+        ? mutedColor
+        : (isImprovement ? const Color(0xFF10B981) : const Color(0xFFEF4444));
+    final accentBg = isFlat
+        ? (isDark ? Colors.white.withOpacity(0.06) : Colors.black.withOpacity(0.05))
+        : accentColor.withOpacity(isDark ? 0.18 : 0.12);
+
+    final arrowIcon = isFlat
+        ? Icons.remove_rounded
+        : (change > 0
+            ? Icons.arrow_upward_rounded
+            : Icons.arrow_downward_rounded);
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 14),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          // Icon tile
+          Container(
+            width: 42,
+            height: 42,
+            decoration: BoxDecoration(
+              color: AppColors.primary.withOpacity(isDark ? 0.14 : 0.10),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Icon(
+              metric.icon,
+              color: AppColors.primary,
+              size: 20,
+            ),
+          ),
+          const SizedBox(width: 12),
+          // Metric name + values
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(
+                  metric.label,
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w500,
+                    color: mutedColor,
+                    letterSpacing: 0.1,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.baseline,
+                  textBaseline: TextBaseline.alphabetic,
+                  children: [
+                    Text(
+                      metric.format(metric.todayValue),
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.w700,
+                        color: primaryTextColor,
+                        letterSpacing: 0.1,
+                        height: 1.1,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Flexible(
+                      child: Text(
+                        '${metric.format(metric.yesterdayValue)} yesterday',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: mutedColor.withOpacity(0.85),
+                          fontWeight: FontWeight.w400,
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 10),
+          // Change pill
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+            decoration: BoxDecoration(
+              color: accentBg,
+              borderRadius: BorderRadius.circular(999),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(arrowIcon, size: 12, color: accentColor),
+                const SizedBox(width: 3),
+                Text(
+                  isFlat ? '0%' : '${percentChange.abs().toStringAsFixed(0)}%',
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: accentColor,
+                    letterSpacing: 0.1,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 }
 
 // Medication Reminders Card
