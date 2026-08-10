@@ -1,0 +1,25 @@
+services:
+  - type: web
+    name: carevibe-backend
+    runtime: node
+    rootDir: backend
+    plan: free
+    buildCommand: npm install
+    startCommand: npm run start
+    healthCheckPath: /health
+    autoDeploy: true
+    envVars:
+      - key: NODE_VERSION
+        value: 20.11.0
+      - key: PORT
+        value: 5000
+      - key: MONGO_URI
+        value: mongodb+srv://yadukrishnagirikg:Kannan%4012@carevibe.josksix.mongodb.net/carevibe?retryWrites=true&w=majority
+      - key: JWT_SECRET
+        sync: false
+      - key: AES_KEY
+        sync: false
+      - key: GROQ_API_KEY
+        sync: false
+      - key: GOOGLE_APPLICATION_CREDENTIALS
+        value: /etc/secrets/firebase-admin-key.json
