@@ -719,9 +719,9 @@ Key takeaway: Small, consistent changes in diet and activity lead to sustainable
 
   const models = [
     ...(process.env.GROQ_MODEL ? [process.env.GROQ_MODEL] : []),
+    'llama-3.3-70b-versatile',
     'llama-3.1-8b-instant',
     'llama-3.1-70b-versatile',
-    'mixtral-8x7b-32768',
   ];
 
   let lastError;
