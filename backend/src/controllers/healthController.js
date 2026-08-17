@@ -214,7 +214,7 @@ Use professional but accessible language. DO NOT use any Markdown formatting (no
         { role: 'system', content: systemPrompt },
         { role: 'user', content: `Analyze this health data and provide a professional wellness summary:\n\n${dataContext}` }
       ],
-          model: 'llama-3.3-70b-versatile',
+          model: 'openai/gpt-oss-120b',
       temperature: 0.4,
       max_tokens: 400,
     });

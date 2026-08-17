@@ -89,7 +89,7 @@ If no date found, return {"kind":"none", "confidence":0.0}`;
         { role: 'system', content: systemPrompt },
         { role: 'user', content: message }
       ],
-      model: 'llama-3.1-8b-instant',
+      model: 'openai/gpt-oss-20b',
       temperature: 0,
       max_tokens: 150,
       response_format: { type: 'json_object' }

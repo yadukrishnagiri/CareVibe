@@ -94,7 +94,7 @@ Return JSON: {"type": "simple_info|guidance|data_question|general", "confidence"
         { role: 'system', content: systemPrompt },
         { role: 'user', content: message }
       ],
-      model: 'llama-3.1-8b-instant',
+      model: 'openai/gpt-oss-20b',
       temperature: 0,
       max_tokens: 50,
       response_format: { type: 'json_object' }
